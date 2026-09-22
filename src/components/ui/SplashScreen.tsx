@@ -6,15 +6,15 @@ export default function SplashScreen() {
   const [fade, setFade] = useState(false);
 
   useEffect(() => {
-    // Đợi 1.5 giây để tạo cảm giác màn hình khởi động
+    // Tăng thời gian hiển thị lên 3.5 giây để ngắm nền động
     const timer1 = setTimeout(() => {
       setFade(true);
-    }, 1500);
+    }, 3500);
 
-    // Xóa hẳn khỏi DOM sau khi hiệu ứng mờ dần kết thúc
+    // Xóa hẳn khỏi DOM sau khi hiệu ứng mờ dần (500ms) kết thúc
     const timer2 = setTimeout(() => {
       setShow(false);
-    }, 2000);
+    }, 4000);
 
     return () => {
       clearTimeout(timer1);
