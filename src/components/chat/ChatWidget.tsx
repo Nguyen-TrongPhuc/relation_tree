@@ -283,32 +283,32 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     <>
       {/* Màn hình chờ đổ chuông (người gọi đang đợi người kia bắt máy) */}
       {callState === 'ringing' && (
-        <div className="fixed inset-0 z-[1000] bg-gradient-to-b from-teal-800 to-teal-950 flex flex-col items-center justify-center text-white">
+        <div className="fixed inset-0 z-[1000] bg-gradient-to-b from-pink-800 to-pink-950 flex flex-col items-center justify-center text-white">
           <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-6 animate-pulse">
             {callMode === 'video' ? <Video size={40} /> : <Phone size={40} />}
           </div>
           <h2 className="text-2xl font-bold mb-2">{livePartnerProfile?.display_name || 'Người ấy'}</h2>
-          <p className="text-teal-200 text-lg mb-12 animate-pulse">Đang đổ chuông...</p>
+          <p className="text-pink-200 text-lg mb-12 animate-pulse">Đang đổ chuông...</p>
           <button 
             onClick={handleLeaveCall}
             className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors active:scale-95"
           >
             <Phone size={28} className="rotate-[135deg]" />
           </button>
-          <p className="text-teal-300 text-sm mt-3">Hủy cuộc gọi</p>
+          <p className="text-pink-300 text-sm mt-3">Hủy cuộc gọi</p>
         </div>
       )}
 
       {/* 📞 POPUP CUỘC GỌI ĐẾN (hiện khi có người gọi) */}
       {incomingCall && !callState && (
-        <div className="fixed inset-0 z-[999] bg-gradient-to-b from-teal-700 to-teal-950 flex flex-col items-center justify-center text-white">
+        <div className="fixed inset-0 z-[999] bg-gradient-to-b from-pink-700 to-pink-950 flex flex-col items-center justify-center text-white">
           <img 
             src={livePartnerProfile?.avatar_url || '/default-avatar.png'}
             alt="Caller"
             className="w-28 h-28 rounded-full border-4 border-white/30 shadow-xl mb-6 object-cover"
           />
           <h2 className="text-2xl font-bold mb-2">{livePartnerProfile?.display_name || 'Người ấy'}</h2>
-          <p className="text-teal-200 text-lg mb-12 animate-pulse">
+          <p className="text-pink-200 text-lg mb-12 animate-pulse">
             Cuộc gọi {incomingCall.mode === 'video' ? 'Video' : 'Thoại'} đến...
           </p>
           <div className="flex gap-12">
@@ -349,17 +349,17 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       {/* MAIN CHAT AREA */}
       <div className="flex-1 flex flex-col min-w-0 relative h-full">
         {/* Header */}
-        <div className="flex flex-col border-b border-teal-100 bg-white/90 backdrop-blur-md shadow-sm z-20">
+        <div className="flex flex-col border-b border-pink-100 bg-white/90 backdrop-blur-md shadow-sm z-20">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               {!onClose && (
-                <Link href="/" className="text-teal-600 hover:bg-teal-50 p-2 rounded-full transition-colors mr-1">
+                <Link href="/" className="text-pink-600 hover:bg-pink-50 p-2 rounded-full transition-colors mr-1">
                   <ArrowLeft size={20} />
                 </Link>
               )}
               <img 
                 src={livePartnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${livePartnerProfile?.id}`} 
-                className="w-10 h-10 rounded-full object-cover border border-teal-100 shadow-sm" 
+                className="w-10 h-10 rounded-full object-cover border border-pink-100 shadow-sm" 
                 alt="Partner Avatar"
               />
                 <div>
@@ -369,10 +369,10 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                   </p>
                 </div>
             </div>
-            <div className="flex items-center gap-1 text-teal-600">
-              <button onClick={() => startCall('audio')} className="p-2 hover:bg-teal-50 rounded-full transition-colors"><Phone size={20} /></button>
-              <button onClick={() => startCall('video')} className="p-2 hover:bg-teal-50 rounded-full transition-colors"><Video size={20} /></button>
-              <button onClick={() => setIsInfoOpen(!isInfoOpen)} className={`p-2 rounded-full transition-colors ${isInfoOpen ? 'bg-teal-100' : 'hover:bg-teal-50'}`}>
+            <div className="flex items-center gap-1 text-pink-600">
+              <button onClick={() => startCall('audio')} className="p-2 hover:bg-pink-50 rounded-full transition-colors"><Phone size={20} /></button>
+              <button onClick={() => startCall('video')} className="p-2 hover:bg-pink-50 rounded-full transition-colors"><Video size={20} /></button>
+              <button onClick={() => setIsInfoOpen(!isInfoOpen)} className={`p-2 rounded-full transition-colors ${isInfoOpen ? 'bg-pink-100' : 'hover:bg-pink-50'}`}>
                 <Info size={20} />
               </button>
             </div>
@@ -389,7 +389,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
                   placeholder="Tìm kiếm trong đoạn chat..." 
-                  className="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-teal-400"
+                  className="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-pink-400"
                 />
               </div>
               <button onClick={() => { setIsSearching(false); setSearchQuery(''); }} className="text-gray-500 hover:text-gray-700 p-1">
@@ -402,7 +402,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         {/* Message List */}
         <div 
           ref={scrollRef}
-          className={`flex-1 overflow-y-auto p-4 space-y-4 relative ${!chatBackgroundUrl && 'bg-[#f8fcfb]'}`}
+          className={`flex-1 overflow-y-auto p-4 space-y-4 relative ${!chatBackgroundUrl && 'bg-pink-50/30'}`}
           style={{ 
             scrollBehavior: 'smooth',
             ...(chatBackgroundUrl ? {
@@ -414,11 +414,11 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         >
           <div className="relative z-10 space-y-4">
           {loading ? (
-            <div className="flex h-full items-center justify-center text-sm text-teal-600">
+            <div className="flex h-full items-center justify-center text-sm text-pink-600">
               Đang tải tin nhắn...
             </div>
           ) : displayedMessages.length === 0 ? (
-            <div className="flex h-full flex-col items-center justify-center text-sm text-teal-600/70 py-20 bg-white/50 backdrop-blur-sm rounded-2xl">
+            <div className="flex h-full flex-col items-center justify-center text-sm text-pink-600/70 py-20 bg-white/50 backdrop-blur-sm rounded-2xl">
               <p>{isSearching ? 'Không tìm thấy kết quả nào.' : 'Chưa có tin nhắn nào.'}</p>
               {!isSearching && <p className="mt-1">Hãy gửi lời chào đến người ấy nhé! 💕</p>}
             </div>
@@ -431,12 +431,12 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
               return (
                 <div key={msg.id} className={`flex w-full gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
                   {!isMe && (
-                    <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-teal-100 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
+                    <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-pink-100 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
                   )}
                     <div className={`p-3 max-w-[75%] shadow-sm whitespace-pre-wrap word-break flex flex-col relative group ${
                       isMe 
-                        ? 'bg-teal-500 text-white rounded-tr-sm items-end' 
-                        : 'bg-white text-gray-800 rounded-tl-sm items-start border border-teal-50'
+                        ? 'bg-pink-500 text-white rounded-tr-sm items-end' 
+                        : 'bg-white text-gray-800 rounded-tl-sm items-start border border-pink-50'
                     }`}>
                       {msg.image_url && (
                         <img src={msg.image_url} alt="attachment" className="rounded-xl mb-2 max-w-full h-auto max-h-64 object-contain bg-black/5" />
@@ -455,7 +455,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         const displayStatus = isExpiredRinging ? 'MISSED' : status;
                       
                         let statusText = '';
-                        let bgColor = isMe ? 'bg-teal-600' : 'bg-gray-50';
+                        let bgColor = isMe ? 'bg-pink-600' : 'bg-gray-50';
                         let textColor = isMe ? 'text-white' : 'text-gray-800';
                       
                         if (displayStatus === 'RINGING') {
@@ -464,8 +464,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                            statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đang diễn ra`;
                         } else if (displayStatus === 'ENDED') {
                            statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đã kết thúc`;
-                           bgColor = isMe ? 'bg-teal-700/50' : 'bg-gray-100';
-                           textColor = isMe ? 'text-teal-50' : 'text-gray-500';
+                           bgColor = isMe ? 'bg-pink-700/50' : 'bg-gray-100';
+                           textColor = isMe ? 'text-pink-50' : 'text-gray-500';
                         } else if (displayStatus === 'MISSED') {
                            statusText = isMe ? 'Cuộc gọi nhỡ' : 'Bạn đã lỡ một cuộc gọi';
                            bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
@@ -504,7 +504,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                              )}
                              {displayStatus === 'RINGING' && isMe && (
                                <div className="flex gap-2 mt-3">
-                                 <button onClick={() => handleJoinCall(msg.id, roomId, mode as any)} className="flex-1 bg-teal-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-teal-600 transition-transform active:scale-95">Vào phòng</button>
+                                 <button onClick={() => handleJoinCall(msg.id, roomId, mode as any)} className="flex-1 bg-pink-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-pink-600 transition-transform active:scale-95">Vào phòng</button>
                                  <button onClick={async () => {
                                    await updateMessageContent(msg.id, `CALL::${roomId}::MISSED::${mode}`);
                                    if (activeCallId === msg.id) {
@@ -519,7 +519,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         msg.content && <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                       )}
 
-                      <p className={`mt-1 text-[9px] ${isMe ? 'text-teal-50' : 'text-gray-400'}`}>
+                      <p className={`mt-1 text-[9px] ${isMe ? 'text-pink-50' : 'text-gray-400'}`}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </p>
                   </div>
@@ -532,8 +532,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
 
         {/* Attachment Preview */}
         {attachment && (
-          <div className="px-4 py-2 bg-gray-50 border-t border-teal-100 flex items-center justify-between z-20">
-            <div className="flex items-center gap-2 text-sm text-teal-700">
+          <div className="px-4 py-2 bg-gray-50 border-t border-pink-100 flex items-center justify-between z-20">
+            <div className="flex items-center gap-2 text-sm text-pink-700">
               <ImageIcon size={16} />
               <span className="truncate max-w-[200px]">{attachment.name}</span>
             </div>
@@ -544,12 +544,12 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         )}
 
         {/* Input Form */}
-        <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-teal-100 bg-white p-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
+        <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-pink-100 bg-white p-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
           <input type="file" accept="image/*" className="hidden" ref={attachInputRef} onChange={handleAttachChange} />
           <button 
             type="button"
             onClick={() => attachInputRef.current?.click()}
-            className="p-2 text-teal-600 hover:bg-teal-50 rounded-full transition-colors"
+            className="p-2 text-pink-600 hover:bg-pink-50 rounded-full transition-colors"
           >
             <ImageIcon size={20} />
           </button>
@@ -559,12 +559,12 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Nhắn gì đi..."
-            className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-700 focus:border-teal-400 focus:outline-none focus:ring-1 focus:ring-teal-400 transition-colors"
+            className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-700 focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-400 transition-colors"
           />
           <button 
             type="submit"
             disabled={(!inputValue.trim() && !attachment) || isSending}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-teal-400 to-cyan-500 text-white transition-transform hover:scale-110 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-400 to-purple-500 text-white transition-transform hover:scale-110 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
           >
             {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} className="-ml-0.5" />}
           </button>
@@ -573,7 +573,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
 
       {/* RIGHT SIDEBAR (INFO PANEL) */}
       {isInfoOpen && (
-        <div className="w-80 border-l border-teal-100 bg-white flex flex-col flex-shrink-0 z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto">
+        <div className="w-80 border-l border-pink-100 bg-white flex flex-col flex-shrink-0 z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto">
           <div className="flex flex-col items-center py-8 px-4 border-b border-gray-50">
             <div className="relative">
               <img 
@@ -591,22 +591,22 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           <div className="flex-1 p-2 space-y-1">
             <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-2">Tùy chỉnh đoạn chat</div>
             
-            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-teal-50 text-gray-700 transition-colors group">
+            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
               <div className="flex items-center gap-3">
-                <UserPen size={18} className="text-teal-600" />
+                <UserPen size={18} className="text-pink-600" />
                 <span className="font-medium text-sm">Đổi biệt danh</span>
               </div>
             </button>
 
             <input type="file" accept="image/*" className="hidden" ref={bgInputRef} onChange={handleBgUpload} />
-            <button onClick={() => bgInputRef.current?.click()} disabled={isUploadingBg} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-teal-50 text-gray-700 transition-colors group disabled:opacity-50">
+            <button onClick={() => bgInputRef.current?.click()} disabled={isUploadingBg} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group disabled:opacity-50">
               <div className="flex items-center gap-3">
                 {isUploadingBg ? <Loader2 size={18} className="text-pink-500 animate-spin" /> : <Palette size={18} className="text-pink-500" />}
                 <span className="font-medium text-sm">{isUploadingBg ? 'Đang tải...' : 'Đổi hình nền chat'}</span>
               </div>
             </button>
 
-            <button onClick={() => setIsSearching(!isSearching)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-teal-50 text-gray-700 transition-colors group">
+            <button onClick={() => setIsSearching(!isSearching)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
               <div className="flex items-center gap-3">
                 <Search size={18} className="text-gray-500" />
                 <span className="font-medium text-sm">Tìm kiếm tin nhắn</span>
@@ -615,7 +615,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             
             <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-4">File phương tiện</div>
             
-            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-teal-50 text-gray-700 transition-colors group">
+            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
               <div className="flex items-center gap-3">
                 <ImageIcon size={18} className="text-blue-500" />
                 <span className="font-medium text-sm">Ảnh, file & liên kết</span>

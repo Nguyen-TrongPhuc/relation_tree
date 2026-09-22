@@ -124,7 +124,7 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
   }, [userProfile, partnerProfile, supabase]);
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-[#e6e2d3] relative">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-[#fdf2f8] relative">
       
       {/* Tree World Container */}
       <div className="relative h-full w-full transition-all duration-500 ease-in-out flex-shrink-0">
@@ -135,9 +135,9 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
               <img 
                 src={liveUserProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile.id}`} 
                 alt="You" 
-                className="w-8 h-8 rounded-full border border-teal-200 object-cover"
+                className="w-8 h-8 rounded-full border border-pink-200 object-cover"
               />
-              <span className="text-[9px] font-bold text-teal-800 mt-1 max-w-[60px] truncate">{userProfile.display_name}</span>
+              <span className="text-[9px] font-bold text-pink-800 mt-1 max-w-[60px] truncate">{userProfile.display_name}</span>
             </div>
             
             <div className="text-red-400 animate-pulse">❤️</div>
@@ -277,7 +277,7 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
         {/* Back to Home Button (Floating Top Left) */}
         <Link
           href="/"
-          className="absolute top-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/70 text-teal-700 shadow-md backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 border border-teal-100"
+          className="absolute top-6 left-6 z-50 flex h-12 w-12 items-center justify-center rounded-full bg-white/70 text-pink-700 shadow-md backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 border border-pink-100"
           title="Trở về Trang Chủ"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-arrow-left"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>

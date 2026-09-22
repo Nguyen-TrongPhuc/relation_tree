@@ -34,7 +34,7 @@ export const WISHES_DATA: SpecialWish[] = [
     month: 8,
     title: 'Sinh Nhật Của Anh 🎂',
     message: 'Hôm nay là sinh nhật anh. Điều ước duy nhất của anh là chúng ta sẽ luôn nắm tay nhau đi qua những ngày tháng êm đềm như thế này. Cảm ơn em đã ở bên anh!',
-    themeColor: 'from-blue-500 to-cyan-400'
+    themeColor: 'from-blue-500 to-purple-400'
   },
   {
     day: 20,

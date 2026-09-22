@@ -97,22 +97,22 @@ export default function ProfilePage() {
   }
 
   return (
-    <main className="flex min-h-[100dvh] flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-[#e6e2d3] via-[#f0fdfa] to-[#ccfbf1]">
-      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
-      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-cyan-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
+    <main className="flex min-h-[100dvh] flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-[#fdf2f8] via-pink-50 to-pink-100">
+      <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
+      <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-purple-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
 
       <div className="max-w-md w-full p-8 bg-white/60 backdrop-blur-xl rounded-3xl shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/50 space-y-6 relative z-10">
         
         <div className="flex justify-between items-center mb-6">
-          <Link href="/" className="text-teal-600 hover:text-teal-800 text-sm font-semibold transition">
+          <Link href="/" className="text-pink-600 hover:text-pink-800 text-sm font-semibold transition">
             &larr; Về Cây Tình Yêu
           </Link>
-          <Link href="/settings/security" className="text-teal-600 hover:text-teal-800 text-sm font-semibold transition">
+          <Link href="/settings/security" className="text-pink-600 hover:text-pink-800 text-sm font-semibold transition">
             Đổi mật khẩu
           </Link>
         </div>
 
-        <h1 className="text-3xl font-extrabold text-teal-800 tracking-tight text-center mb-2">Hồ Sơ Của Bạn</h1>
+        <h1 className="text-3xl font-extrabold text-pink-800 tracking-tight text-center mb-2">Hồ Sơ Của Bạn</h1>
         
         {/* Đối phương */}
         {partnerProfile && (
@@ -124,39 +124,39 @@ export default function ProfilePage() {
         )}
 
         {error && <div className="p-3 mb-4 bg-red-50/80 border border-red-100 text-red-600 text-sm rounded-xl text-center">{error}</div>}
-        {success && <div className="p-3 mb-4 bg-teal-50/80 border border-teal-200 text-teal-700 text-sm rounded-xl text-center font-medium">{success}</div>}
+        {success && <div className="p-3 mb-4 bg-pink-50/80 border border-pink-200 text-pink-700 text-sm rounded-xl text-center font-medium">{success}</div>}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           
           <div className="flex flex-col items-center justify-center space-y-3 mb-4">
-            <div className="w-24 h-24 rounded-full border-4 border-teal-100 shadow-md overflow-hidden bg-white flex items-center justify-center">
+            <div className="w-24 h-24 rounded-full border-4 border-pink-100 shadow-md overflow-hidden bg-white flex items-center justify-center">
               {previewUrl ? (
                 <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
               ) : (
-                <span className="text-teal-300 text-xs text-center px-2">Chưa có ảnh</span>
+                <span className="text-pink-300 text-xs text-center px-2">Chưa có ảnh</span>
               )}
             </div>
             
-            <label className="cursor-pointer bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold py-1.5 px-3 rounded-full border border-teal-200 transition">
+            <label className="cursor-pointer bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-semibold py-1.5 px-3 rounded-full border border-pink-200 transition">
               Tải ảnh từ máy
               <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
             </label>
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-teal-800 mb-1">Tên Hiển Thị</label>
+            <label className="block text-sm font-semibold text-pink-800 mb-1">Tên Hiển Thị</label>
             <input
               type="text"
               name="displayName"
               required
               defaultValue={initialData.displayName}
-              className="w-full p-3 border border-teal-100 rounded-xl bg-white/70 text-teal-900 placeholder-teal-700/40 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+              className="w-full p-3 border border-pink-100 rounded-xl bg-white/70 text-pink-900 placeholder-pink-700/40 focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
               placeholder="VD: Bé Yêu"
             />
           </div>
           
           <div>
-            <label className="block text-sm font-semibold text-teal-800 mb-1">Hoặc dán Link ảnh (từ mạng)</label>
+            <label className="block text-sm font-semibold text-pink-800 mb-1">Hoặc dán Link ảnh (từ mạng)</label>
             <input
               type="url"
               name="avatarUrl"
@@ -164,7 +164,7 @@ export default function ProfilePage() {
               onChange={(e) => {
                 if (!selectedFile) setPreviewUrl(e.target.value);
               }}
-              className="w-full p-3 border border-teal-100 rounded-xl bg-white/70 text-teal-900 placeholder-teal-700/40 focus:outline-none focus:ring-2 focus:ring-teal-400 transition"
+              className="w-full p-3 border border-pink-100 rounded-xl bg-white/70 text-pink-900 placeholder-pink-700/40 focus:outline-none focus:ring-2 focus:ring-pink-400 transition"
               placeholder="https://example.com/avatar.jpg"
             />
           </div>
@@ -172,7 +172,7 @@ export default function ProfilePage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-gradient-to-r from-teal-500 to-cyan-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 mt-6"
+            className="w-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 mt-6"
           >
             {loading ? 'Đang lưu...' : 'Lưu Thay Đổi'}
           </button>

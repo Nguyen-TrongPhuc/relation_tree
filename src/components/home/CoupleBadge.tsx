@@ -42,9 +42,9 @@ export default function CoupleBadge({ initialUser, initialPartner }: { initialUs
         <img 
           src={userProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile.id}`} 
           alt="You" 
-          className="w-16 h-16 rounded-full border-4 border-teal-200 object-cover shadow-md"
+          className="w-16 h-16 rounded-full border-4 border-pink-200 object-cover shadow-md"
         />
-        <span className="text-sm font-bold text-teal-800 mt-2">{userProfile.display_name}</span>
+        <span className="text-sm font-bold text-pink-800 mt-2">{userProfile.display_name}</span>
       </div>
       
       <div className="text-red-400 text-3xl animate-pulse drop-shadow-md">❤️</div>
