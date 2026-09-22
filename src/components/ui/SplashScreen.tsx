@@ -30,7 +30,7 @@ export default function SplashScreen() {
     >
       <div className="relative w-32 h-32 mb-6 animate-pulse rounded-[32px] overflow-hidden shadow-2xl shadow-teal-200">
         <img 
-          src="/apple-icon.jpg" 
+          src="/apple-icon.png" 
           alt="Cây Tình Yêu" 
           className="w-full h-full object-cover"
         />
