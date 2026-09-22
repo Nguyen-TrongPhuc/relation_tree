@@ -32,7 +32,7 @@ export default async function ChatPage() {
   const partnerProfile = profiles?.find(p => p.id === partnerId) || { id: partnerId, display_name: 'Người ấy', avatar_url: null };
 
   return (
-    <main className="flex h-screen w-full bg-white overflow-hidden flex-row">
+    <main className="flex h-[100dvh] w-full bg-white overflow-hidden flex-row">
       {/* Main Chat Area */}
       <div className="flex-1 relative h-full flex flex-col min-w-0 bg-white">
          <ChatWidget partnerProfile={partnerProfile} chatBackgroundUrl={sharedBg} />

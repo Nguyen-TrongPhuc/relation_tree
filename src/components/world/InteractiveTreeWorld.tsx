@@ -124,7 +124,7 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
   }, [userProfile, partnerProfile, supabase]);
 
   return (
-    <div className="flex h-screen w-full overflow-hidden bg-[#e6e2d3] relative">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-[#e6e2d3] relative">
       
       {/* Tree World Container */}
       <div className="relative h-full w-full transition-all duration-500 ease-in-out flex-shrink-0">
@@ -161,7 +161,7 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
 
         {/* Tree Control Panel */}
         <aside
-          className="absolute right-4 top-1/2 z-40 w-60 -translate-y-1/2 rounded-2xl border border-white/50 bg-white/35 p-4 shadow-lg backdrop-blur-md transition-opacity duration-300 opacity-100"
+          className="absolute bottom-6 left-1/2 -translate-x-1/2 md:translate-x-0 md:left-auto md:right-4 md:top-1/2 z-40 w-[90%] max-w-[320px] md:w-60 md:-translate-y-1/2 rounded-2xl border border-white/50 bg-white/50 md:bg-white/35 p-4 shadow-lg backdrop-blur-md transition-opacity duration-300 opacity-100"
           onPointerDown={(event) => event.stopPropagation()}
         >
           {/* Phase & Day counter */}
