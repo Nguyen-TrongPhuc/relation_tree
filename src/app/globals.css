@@ -42,6 +42,18 @@ input, textarea, select {
 .animate-blob {
   animation: blob 7s infinite;
 }
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.bg-gradient-animate {
+  background: linear-gradient(-45deg, #fbc2eb, #a18cd1, #fbc2eb, #fbc2eb);
+  background-size: 400% 400%;
+  animation: gradientBG 4s ease infinite;
+}
 .animation-delay-2000 {
   animation-delay: 2s;
 }

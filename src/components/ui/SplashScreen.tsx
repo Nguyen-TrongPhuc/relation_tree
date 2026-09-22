@@ -26,17 +26,17 @@ export default function SplashScreen() {
 
   return (
     <div 
-      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-teal-50 transition-opacity duration-500 ${fade ? 'opacity-0' : 'opacity-100'}`}
+      className={`fixed inset-0 z-[9999] flex flex-col items-center justify-center bg-gradient-animate transition-opacity duration-500 ${fade ? 'opacity-0' : 'opacity-100'}`}
     >
-      <div className="relative w-32 h-32 mb-6 animate-pulse rounded-[32px] overflow-hidden shadow-2xl shadow-teal-200">
+      <div className="relative w-32 h-32 mb-6 animate-pulse rounded-[32px] overflow-hidden shadow-2xl shadow-pink-300 border-2 border-white/50">
         <img 
           src="/apple-icon.png" 
           alt="Cây Tình Yêu" 
           className="w-full h-full object-cover"
         />
       </div>
-      <h1 className="text-3xl font-bold text-teal-800 tracking-wider">Cây Tình Yêu</h1>
-      <p className="text-teal-600 mt-3 text-sm animate-bounce">Đang vào khu vườn...</p>
+      <h1 className="text-3xl font-bold text-white drop-shadow-md tracking-wider">Cây Tình Yêu</h1>
+      <p className="text-white/80 mt-3 text-sm font-medium animate-bounce drop-shadow-sm">Đang vào khu vườn...</p>
     </div>
   );
 }
