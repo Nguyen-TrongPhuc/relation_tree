@@ -6,12 +6,23 @@ import CoupleBadge from '@/components/home/CoupleBadge';
 import LocketWidget from '@/components/home/LocketWidget';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Loader2 } from 'lucide-react';
 
 export default function DashboardPage() {
   const { user, loading, pairData, userProfile, partnerProfile } = useAuth();
   const router = useRouter();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  useEffect(() => {
+    const updateUnread = () => {
+      const count = parseInt(localStorage.getItem('unread_count') || '0', 10);
+      setUnreadCount(count);
+    };
+    updateUnread();
+    window.addEventListener('unread_update', updateUnread);
+    return () => window.removeEventListener('unread_update', updateUnread);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -117,3 +128,5 @@ export default function DashboardPage() {
     </main>
   );
 }
+
+

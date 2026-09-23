@@ -36,6 +36,8 @@ export const viewport: Viewport = {
   viewportFit: "cover",
 };
 
+import GlobalNotifications from "@/components/chat/GlobalNotifications";
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -46,6 +48,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <SplashScreen />
         <AuthProvider>
           {children}
+          <GlobalNotifications />
         </AuthProvider>
       </body>
     </html>

@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { getMessages, sendMessage, updateChatBackground, updateMessageContent } from '@/app/actions/chat';
-import { Send, ArrowLeft, Phone, Video, Info, UserPen, Palette, Search, Image as ImageIcon, X, Paperclip, Loader2 } from 'lucide-react';
+import { Send, ArrowLeft, Phone, Video, Info, UserPen, Palette, Search, Image as ImageIcon, X, Paperclip, Loader2, Check, CheckCheck } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
@@ -29,14 +29,12 @@ function formatLastActive(dateStr?: string) {
 }
 
 function MessageStatus({ msg, isPartnerOnline, partnerLastActive }: { msg: any, isPartnerOnline: boolean, partnerLastActive: string | undefined }) {
-  const [timePassed, setTimePassed] = useState(false);
+  const [timePassed, setTimePassed] = React.useState(false);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (msg.id > 0) {
-      // Tính toán kho?ng th?i gian đ? trôi qua
       const sentTime = new Date(msg.created_at).getTime();
       const diff = Date.now() - sentTime;
-      
       if (diff >= 2000) {
         setTimePassed(true);
       } else {
@@ -47,28 +45,30 @@ function MessageStatus({ msg, isPartnerOnline, partnerLastActive }: { msg: any, 
   }, [msg.id, msg.created_at]);
 
   let statusText = '';
-  let showIcon = false;
+  let Icon = null;
+  let iconClass = '';
 
   if (msg.id < 0) {
-    statusText = 'Đang g?i...';
-    showIcon = true;
+    statusText = 'Đang gửi...';
+    Icon = Loader2;
+    iconClass = 'animate-spin';
+  } else if (!timePassed) {
+    statusText = 'Đã gửi';
+    Icon = Check;
+  } else if (isPartnerOnline || (partnerLastActive && new Date(partnerLastActive) > new Date(msg.created_at))) {
+    statusText = 'Đã xem';
+    Icon = CheckCheck;
+    iconClass = 'text-pink-500';
   } else {
-    const sentTime = new Date(msg.created_at).getTime();
-    const lastActive = partnerLastActive ? new Date(partnerLastActive).getTime() : 0;
-
-    if (isPartnerOnline || lastActive > sentTime) {
-      statusText = 'Đ? xem';
-    } else if (timePassed) {
-      statusText = 'Đ? nh?n';
-    } else {
-      statusText = 'Đ? g?i';
-    }
+    statusText = 'Đã nhận';
+    Icon = CheckCheck;
+    iconClass = 'text-gray-400';
   }
 
   return (
-    <div className="text-[11px] font-medium text-pink-700/60 mt-1 mr-1 flex items-center gap-1">
-      {showIcon && <Loader2 size={10} className="animate-spin" />}
+    <div className="text-[10px] font-medium text-gray-400 mt-1 flex items-center gap-1 justify-end">
       <span>{statusText}</span>
+      {Icon && <Icon size={12} className={iconClass} />}
     </div>
   );
 }
@@ -491,7 +491,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         {/* Message List */}
         <div 
           ref={scrollRef}
-          className={`flex-1 overflow-y-auto p-4 space-y-4 relative ${!chatBackgroundUrl && 'bg-pink-50/30'}`}
+          className={`flex-1 overflow-y-auto p-4 space-y-4 relative ${!chatBackgroundUrl ? 'bg-[#f8f9fa] bg-[radial-gradient(#e5e7eb_1px,transparent_1px)] [background-size:16px_16px]' : ''}`}
           style={{ 
             scrollBehavior: 'smooth',
             ...(chatBackgroundUrl ? {
@@ -555,8 +555,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                       <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
                         <div className={`p-3 shadow-sm whitespace-pre-wrap word-break flex flex-col relative group ${
                           isMe 
-                            ? 'bg-pink-600 text-white rounded-tr-sm rounded-l-2xl rounded-br-2xl items-end' 
-                            : 'bg-teal-50 text-teal-900 border border-teal-100 rounded-tl-sm rounded-r-2xl rounded-bl-2xl items-start'
+                            ? 'bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-[20px] rounded-br-[4px] shadow-md shadow-pink-500/20 items-end' 
+                            : 'bg-white text-gray-800 border border-gray-100 rounded-[20px] rounded-bl-[4px] shadow-sm items-start'
                         }`}>
                                                       {msg.replied_message && (
                               <div className="w-full mb-2 bg-black/10 rounded-xl p-2 border-l-4 border-white/50 text-sm">
