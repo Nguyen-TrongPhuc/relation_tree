@@ -349,7 +349,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       {/* MAIN CHAT AREA */}
       <div className="flex-1 flex flex-col min-w-0 relative h-full">
         {/* Header */}
-        <div className="flex flex-col border-b border-pink-100 bg-white/90 backdrop-blur-md shadow-sm z-20">
+        <div className="flex flex-col border-b border-pink-100 bg-[#fdf2f8]/95 backdrop-blur-md shadow-sm z-20">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               {!onClose && (

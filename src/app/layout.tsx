@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Khu vườn riêng tư của hai người",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "black-translucent", // Full screen, overlay the status bar
+    statusBarStyle: "default",
     title: "Cây Tình Yêu",
   },
   formatDetection: {

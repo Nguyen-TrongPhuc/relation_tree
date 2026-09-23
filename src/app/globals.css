@@ -50,9 +50,9 @@ input, textarea, select {
 }
 
 .bg-gradient-animate {
-  background: linear-gradient(-45deg, #fbc2eb, #5eead4, #fbc2eb, #a18cd1);
-  background-size: 400% 400%;
-  animation: gradientBG 4s ease infinite;
+  background: linear-gradient(180deg, #fdf2f8 0%, #fbc2eb 50%, #5eead4 100%);
+  background-size: 100% 400%;
+  animation: gradientBG 6s ease infinite;
 }
 .animation-delay-2000 {
   animation-delay: 2s;
