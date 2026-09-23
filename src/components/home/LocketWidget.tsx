@@ -1,85 +1,86 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { Camera, Heart, MessageCircle, Smile, X, Loader2, Send } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Camera, Smile, Loader2, Send, ChevronLeft, ChevronRight } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import CameraModal from '@/components/locket/CameraModal';
+import PreviewModal from '../locket/PreviewModal';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
 
 export default function LocketWidget({ userProfile, partnerProfile }: { userProfile: any, partnerProfile: any }) {
-  const [latestMoment, setLatestMoment] = useState<any>(null);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [moments, setMoments] = useState<any[]>([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [replyText, setReplyText] = useState('');
   const [showEmojis, setShowEmojis] = useState(false);
   const [isSendingReply, setIsSendingReply] = useState(false);
+  
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const supabase = createClient();
 
   useEffect(() => {
-    fetchLatestMoment();
+    fetchMoments();
 
-    // Listen for new moments or reactions
     const channel = supabase.channel('public:messages')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'is_moment=eq.true' }, (payload) => {
-        if (payload.new.sender_id === userProfile.id || payload.new.sender_id === partnerProfile.id) {
-          setLatestMoment(payload.new);
-        }
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'is_moment=eq.true' }, () => {
+        fetchMoments();
       })
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, (payload) => {
-        setLatestMoment((prev: any) => {
-          if (prev && prev.id === payload.new.id) {
-            return payload.new;
-          }
-          return prev;
-        });
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'messages' }, () => {
+        fetchMoments();
       })
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
   }, []);
 
-  const fetchLatestMoment = async () => {
+  const fetchMoments = async () => {
     const { data } = await supabase
       .from('messages')
       .select('*')
       .in('sender_id', [userProfile.id, partnerProfile.id])
       .eq('is_moment', true)
       .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .limit(10);
     
-    setLatestMoment(data);
+    setMoments(data || []);
     setLoading(false);
   };
 
-  const handleSendMoment = async (imageUrl: string) => {
+  const handleSendMoment = async (imageUrl: string, caption: string) => {
     await supabase.from('messages').insert({
       sender_id: userProfile.id,
       receiver_id: partnerProfile.id,
-      content: '📸 Vừa chia sẻ một khoảnh khắc',
+      content: caption.trim() || '📸 Vừa chia sẻ một khoảnh khắc',
       image_url: imageUrl,
       is_moment: true,
     });
-    // Optimistic fetch will happen via Realtime, but let's fetch anyway to be safe
-    fetchLatestMoment();
+    setPhotoFile(null);
+    setCurrentIndex(0);
   };
 
   const handleReact = async (emoji: string) => {
-    if (!latestMoment) return;
+    const currentMoment = moments[currentIndex];
+    if (!currentMoment) return;
+    
     setShowEmojis(false);
-    const currentReactions = latestMoment.reactions || {};
+    const currentReactions = currentMoment.reactions || {};
     const newReactions = { ...currentReactions, [userProfile.id]: emoji };
     
     // Optimistic UI
-    setLatestMoment({ ...latestMoment, reactions: newReactions });
+    const updatedMoments = [...moments];
+    updatedMoments[currentIndex] = { ...currentMoment, reactions: newReactions };
+    setMoments(updatedMoments);
 
-    await supabase.from('messages').update({ reactions: newReactions }).eq('id', latestMoment.id);
+    await supabase.from('messages').update({ reactions: newReactions }).eq('id', currentMoment.id);
   };
 
   const handleReply = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!replyText.trim() || !latestMoment) return;
+    const currentMoment = moments[currentIndex];
+    if (!replyText.trim() || !currentMoment) return;
     
     setIsSendingReply(true);
     const text = replyText.trim();
@@ -89,44 +90,73 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
       sender_id: userProfile.id,
       receiver_id: partnerProfile.id,
       content: text,
-      reply_to_id: latestMoment.id, // Đính kèm ảnh Locket vào tin nhắn
+      reply_to_id: currentMoment.id,
     });
 
     setIsSendingReply(false);
-    // Có thể báo toast: "Đã gửi vào khung chat!"
   };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      setIsPreviewOpen(true);
+    }
+    // Reset input
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const currentMoment = moments[currentIndex];
 
   return (
     <div className="w-full flex flex-col items-center gap-4">
+      <input 
+        type="file" 
+        accept="image/*" 
+        capture="user" 
+        className="hidden" 
+        ref={fileInputRef} 
+        onChange={handleFileSelect} 
+      />
+
       <div className="relative w-full aspect-square max-w-[320px] bg-gray-100 rounded-[2rem] shadow-xl overflow-hidden border-4 border-white group">
         {loading ? (
           <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-pink-300" />
           </div>
-        ) : latestMoment && latestMoment.image_url ? (
+        ) : currentMoment ? (
           <>
-            <img src={latestMoment.image_url} alt="Latest Moment" className="w-full h-full object-cover" />
+            <img src={currentMoment.image_url} alt="Moment" className="w-full h-full object-cover" />
             
             {/* Header info */}
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-center drop-shadow-md">
+            <div className="absolute top-4 left-4 right-4 flex justify-between items-center drop-shadow-md z-10">
               <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full">
                 <img 
-                  src={latestMoment.sender_id === userProfile.id ? userProfile.avatar_url : partnerProfile.avatar_url} 
+                  src={currentMoment.sender_id === userProfile.id ? userProfile.avatar_url : partnerProfile.avatar_url} 
                   className="w-5 h-5 rounded-full object-cover" 
                 />
                 <span className="text-white text-xs font-medium">
-                  {latestMoment.sender_id === userProfile.id ? 'Bạn' : partnerProfile.display_name}
+                  {currentMoment.sender_id === userProfile.id ? 'Bạn' : partnerProfile.display_name}
                 </span>
               </div>
               <span className="text-white text-[10px] bg-black/30 backdrop-blur-md px-2 py-1 rounded-full">
-                {new Date(latestMoment.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                {new Date(currentMoment.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
               </span>
             </div>
 
+            {/* Caption */}
+            {currentMoment.content && currentMoment.content !== '📸 Vừa chia sẻ một khoảnh khắc' && (
+              <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-10">
+                <span className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-2xl text-sm font-medium inline-block shadow-lg">
+                  {currentMoment.content}
+                </span>
+              </div>
+            )}
+
             {/* Reactions display */}
-            {latestMoment.reactions && Object.values(latestMoment.reactions).length > 0 && (
-              <div className="absolute bottom-4 right-4 flex -space-x-2">
-                {Object.entries(latestMoment.reactions).map(([uid, emoji]: any) => (
+            {currentMoment.reactions && Object.values(currentMoment.reactions).length > 0 && (
+              <div className="absolute bottom-4 right-4 flex -space-x-2 z-10">
+                {Object.entries(currentMoment.reactions).map(([uid, emoji]: any) => (
                   <div key={uid} className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-md border border-gray-100 text-sm animate-in zoom-in">
                     {emoji}
                   </div>
@@ -136,17 +166,39 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
             
             {/* Camera trigger overlay */}
             <button 
-              onClick={() => setIsCameraOpen(true)}
-              className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 bg-black/20 transition-opacity flex items-center justify-center"
+              onClick={() => fileInputRef.current?.click()}
+              className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 bg-black/20 transition-opacity flex items-center justify-center z-20"
             >
               <div className="bg-white/90 p-4 rounded-full shadow-lg backdrop-blur-sm">
                 <Camera className="text-pink-600" size={32} />
               </div>
             </button>
+            
+            {/* Navigation Arrows */}
+            {moments.length > 1 && (
+              <>
+                {currentIndex < moments.length - 1 && (
+                  <button 
+                    onClick={() => setCurrentIndex(i => i + 1)} 
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/50 backdrop-blur-md p-2 rounded-full shadow-md z-30 hover:bg-white/80 active:scale-95"
+                  >
+                    <ChevronLeft size={20} className="text-gray-800" />
+                  </button>
+                )}
+                {currentIndex > 0 && (
+                  <button 
+                    onClick={() => setCurrentIndex(i => i - 1)} 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/50 backdrop-blur-md p-2 rounded-full shadow-md z-30 hover:bg-white/80 active:scale-95"
+                  >
+                    <ChevronRight size={20} className="text-gray-800" />
+                  </button>
+                )}
+              </>
+            )}
           </>
         ) : (
           <button 
-            onClick={() => setIsCameraOpen(true)}
+            onClick={() => fileInputRef.current?.click()}
             className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 to-teal-50 gap-4"
           >
             <div className="w-20 h-20 rounded-full bg-white shadow-md flex items-center justify-center border border-pink-100">
@@ -158,7 +210,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
       </div>
 
       {/* Reply and React Box */}
-      {latestMoment && latestMoment.sender_id === partnerProfile.id && (
+      {currentMoment && currentMoment.sender_id === partnerProfile.id && (
         <div className="w-full max-w-[320px] bg-white rounded-full shadow-md border border-pink-50 flex items-center p-1.5 relative">
           <button 
             type="button"
@@ -202,11 +254,15 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         </div>
       )}
 
-      <CameraModal 
-        isOpen={isCameraOpen} 
-        onClose={() => setIsCameraOpen(false)} 
+      <PreviewModal 
+        isOpen={isPreviewOpen} 
+        onClose={() => {
+          setIsPreviewOpen(false);
+          setPhotoFile(null);
+        }} 
         onSend={handleSendMoment}
         userId={userProfile.id}
+        photoFile={photoFile}
       />
     </div>
   );
