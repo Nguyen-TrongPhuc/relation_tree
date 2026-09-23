@@ -1,13 +1,42 @@
-import { login } from '../actions'
-import Link from 'next/link'
+'use client';
 
-export default async function LoginPage(props: {
-  searchParams: Promise<{ error?: string }>
-}) {
-  const searchParams = await props.searchParams;
+import { useState } from 'react';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
+import { Loader2 } from 'lucide-react';
+
+export default function LoginPage() {
+  const router = useRouter();
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
+
+  const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
+    const { error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (authError) {
+      setError(authError.message);
+      setLoading(false);
+    } else {
+      // Thành công, tải lại trang để AuthProvider nhận session từ localStorage
+      window.location.href = '/';
+    }
+  };
+
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-pink-50 via-white to-teal-50">
-      {/* Decorative Blobs */}
       <div className="absolute top-[-10%] left-[-10%] w-96 h-96 bg-pink-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-96 h-96 bg-teal-300 rounded-full mix-blend-multiply filter blur-3xl opacity-30 animate-blob animation-delay-2000"></div>
 
@@ -19,7 +48,7 @@ export default async function LoginPage(props: {
           </p>
         </div>
 
-        <form className="space-y-5" action={login}>
+        <form className="space-y-5" onSubmit={handleLogin}>
           <div className="space-y-2">
             <label htmlFor="email" className="text-sm font-semibold text-pink-800">Email</label>
             <input 
@@ -43,14 +72,18 @@ export default async function LoginPage(props: {
             />
           </div>
           
-          {searchParams?.error && (
+          {error && (
             <div className="p-3 bg-red-50/80 border border-red-100 text-red-600 text-sm rounded-xl text-center">
-              {searchParams.error}
+              {error}
             </div>
           )}
 
-          <button type="submit" className="w-full bg-gradient-to-r from-pink-400 to-purple-500 hover:from-pink-500 hover:to-purple-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-pink-500/30 transition-all transform hover:scale-[1.02] active:scale-95">
-            Đăng Nhập
+          <button 
+            type="submit" 
+            disabled={loading}
+            className="w-full flex items-center justify-center bg-gradient-to-r from-pink-400 to-purple-500 hover:from-pink-500 hover:to-purple-600 text-white py-3 rounded-xl font-bold shadow-lg shadow-pink-500/30 transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-70 disabled:scale-100"
+          >
+            {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Đăng Nhập'}
           </button>
         </form>
 
