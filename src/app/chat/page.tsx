@@ -1,39 +1,39 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
 import ChatWidget from '@/components/chat/ChatWidget';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
-export default async function ChatPage() {
-  const supabase = await createClient();
-  
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    redirect('/login');
+export default function ChatPage() {
+  const { user, loading, pairData, partnerProfile } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
+    } else if (!loading && user && !pairData) {
+      router.replace('/setup');
+    }
+  }, [loading, user, pairData, router]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-pink-50 via-white to-teal-50">
+        <Loader2 className="w-6 h-6 animate-spin text-pink-400" />
+      </div>
+    );
   }
 
-  const { data: pair } = await supabase
-    .from('friendships')
-    .select('id, sender_id, receiver_id, background_url')
-    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-    .eq('status', 'accepted')
-    .maybeSingle();
-
-  if (!pair) {
-    redirect('/setup');
+  if (!user || !pairData || !partnerProfile) {
+    return null;
   }
 
-  const partnerId = pair.sender_id === user.id ? pair.receiver_id : pair.sender_id;
-  const sharedBg = pair.background_url;
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url, last_active')
-    .in('id', [user.id, partnerId]);
-    
-  const userProfile = profiles?.find(p => p.id === user.id) || { id: user.id, display_name: 'Bạn', avatar_url: null };
-  const partnerProfile = profiles?.find(p => p.id === partnerId) || { id: partnerId, display_name: 'Người ấy', avatar_url: null };
+  const sharedBg = pairData.background_url;
 
   return (
     <main className="flex h-[100dvh] w-full bg-white overflow-hidden flex-row">
-      {/* Main Chat Area */}
       <div className="flex-1 relative h-full flex flex-col min-w-0 bg-white">
          <ChatWidget partnerProfile={partnerProfile} chatBackgroundUrl={sharedBg} />
       </div>

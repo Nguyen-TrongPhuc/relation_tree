@@ -1,39 +1,43 @@
-import { createClient } from '@/lib/supabase/server';
-import { redirect } from 'next/navigation';
+'use client';
+
 import Link from 'next/link';
 import { TreeDeciduous, MessageCircleHeart, Settings } from 'lucide-react';
 import CoupleBadge from '@/components/home/CoupleBadge';
+import { useAuth } from '@/components/providers/AuthProvider';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
+import { Loader2 } from 'lucide-react';
 
-export default async function DashboardPage() {
-  const supabase = await createClient();
-  
-  const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) {
-    redirect('/login');
+export default function DashboardPage() {
+  const { user, loading, pairData, userProfile, partnerProfile } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
+    } else if (!loading && user && !pairData) {
+      router.replace('/setup');
+    }
+  }, [loading, user, pairData, router]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-pink-50 via-white to-teal-50">
+        <div className="flex flex-col items-center gap-4">
+          <div className="relative w-20 h-20 animate-pulse drop-shadow-xl">
+            <img src="/apple-icon.png" alt="Loading" className="w-full h-full object-contain opacity-50" />
+          </div>
+          <Loader2 className="w-6 h-6 animate-spin text-pink-400" />
+        </div>
+      </div>
+    );
   }
 
-  // Check if user has an accepted partner
-  const { data: pair } = await supabase
-    .from('friendships')
-    .select('id, sender_id, receiver_id, background_url')
-    .or(`sender_id.eq.${user.id},receiver_id.eq.${user.id}`)
-    .eq('status', 'accepted')
-    .maybeSingle();
-
-  // If not paired, force them to setup page
-  if (!pair) {
-    redirect('/setup');
+  if (!user || !pairData || !userProfile || !partnerProfile) {
+    return null;
   }
 
-  const partnerId = pair.sender_id === user.id ? pair.receiver_id : pair.sender_id;
-  const { data: profiles } = await supabase
-    .from('profiles')
-    .select('id, display_name, avatar_url, last_active')
-    .in('id', [user.id, partnerId]);
-    
-  const userProfile = profiles?.find(p => p.id === user.id) || { id: user.id, display_name: 'Bạn', avatar_url: null };
-  const partnerProfile = profiles?.find(p => p.id === partnerId) || { id: partnerId, display_name: 'Người ấy', avatar_url: null };
-  const sharedBg = pair.background_url;
+  const sharedBg = pairData.background_url;
 
   return (
     <main className="flex min-h-[100dvh] flex-col items-center justify-center p-6 relative overflow-hidden bg-gradient-to-br from-pink-50 via-white to-teal-50 font-sans">
