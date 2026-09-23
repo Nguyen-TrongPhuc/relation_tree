@@ -5,7 +5,7 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Grid, Loader2, Smile, Send, Heart } from 'lucide-react';
+import { ArrowLeft, Clock, Grid, Loader2, Smile, Send, Heart, Download, Trash, MoreHorizontal } from 'lucide-react';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
 
@@ -24,6 +24,7 @@ export default function LocketPage() {
   const [replyingTo, setReplyingTo] = useState<string | null>(null);
   const [replyText, setReplyText] = useState('');
   const [showEmojisFor, setShowEmojisFor] = useState<string | null>(null);
+  const [showMenuFor, setShowMenuFor] = useState<string | null>(null);
 
   const supabase = createClient();
   const observerTarget = useRef(null);
@@ -133,6 +134,31 @@ export default function LocketPage() {
     await supabase.from('messages').update({ reactions: newReactions }).eq('id', momentId);
   };
 
+  const handleDelete = async (momentId: string) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa ảnh này không?')) return;
+    setMoments(prev => prev.filter(m => m.id !== momentId));
+    await supabase.from('messages').delete().eq('id', momentId);
+    setShowMenuFor(null);
+  };
+
+  const handleDownload = async (imageUrl: string) => {
+    try {
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `locket-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (e) {
+      window.open(imageUrl, '_blank');
+    }
+    setShowMenuFor(null);
+  };
+
   const handleReply = async (e: React.FormEvent, momentId: string) => {
     e.preventDefault();
     if (!replyText.trim()) return;
@@ -197,6 +223,34 @@ export default function LocketPage() {
                       <p className="text-sm font-bold text-gray-800">{moment.sender_id === userProfile.id ? 'Bạn' : partnerProfile.display_name}</p>
                       <p className="text-[10px] text-gray-400 font-medium">{new Date(moment.created_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}</p>
                     </div>
+                  </div>
+                  
+                  <div className="relative">
+                    <button 
+                      onClick={() => setShowMenuFor(showMenuFor === moment.id ? null : moment.id)}
+                      className="p-2 text-gray-400 hover:text-gray-700 rounded-full hover:bg-gray-50"
+                    >
+                      <MoreHorizontal size={20} />
+                    </button>
+                    
+                    {showMenuFor === moment.id && (
+                      <div className="absolute right-0 top-full mt-1 w-40 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-20 animate-in fade-in zoom-in-95">
+                        <button 
+                          onClick={() => handleDownload(moment.image_url)}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                        >
+                          <Download size={16} /> Tải xuống
+                        </button>
+                        {moment.sender_id === userProfile.id && (
+                          <button 
+                            onClick={() => handleDelete(moment.id)}
+                            className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                          >
+                            <Trash size={16} /> Xóa ảnh
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
