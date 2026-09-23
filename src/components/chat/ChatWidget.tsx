@@ -599,20 +599,31 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         </div>
 
                         {/* Message Status */}
-                        {isMe && isLastMessage && (
-                          <div className="text-[11px] font-medium text-pink-700/60 mt-1 mr-1 flex items-center gap-1">
-                            {msg.id < 0 ? (
-                              <>
-                                <Loader2 size={10} className="animate-spin" />
-                                <span>Đang gửi...</span>
-                              </>
-                            ) : isPartnerOnline ? (
-                              <span>Đã xem</span>
-                            ) : (
-                              <span>Đã gửi</span>
-                            )}
-                          </div>
-                        )}
+                        {isMe && isLastMessage && (() => {
+                          let statusText = '';
+                          let showIcon = false;
+                          
+                          if (msg.id < 0) {
+                            statusText = 'Đang gửi...';
+                            showIcon = true;
+                          } else {
+                            const sentTime = new Date(msg.created_at).getTime();
+                            const lastActiveTime = livePartnerProfile?.last_active ? new Date(livePartnerProfile.last_active).getTime() : 0;
+                            
+                            if (isPartnerOnline || lastActiveTime > sentTime) {
+                              statusText = 'Đã xem';
+                            } else {
+                              statusText = 'Đã nhận';
+                            }
+                          }
+
+                          return (
+                            <div className="text-[11px] font-medium text-pink-700/60 mt-1 mr-1 flex items-center gap-1">
+                              {showIcon && <Loader2 size={10} className="animate-spin" />}
+                              <span>{statusText}</span>
+                            </div>
+                          );
+                        })()}
                       </div>
                     </div>
                   </React.Fragment>
