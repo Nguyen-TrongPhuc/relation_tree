@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   description: "Khu vườn riêng tư của hai người",
   appleWebApp: {
     capable: true,
-    statusBarStyle: "default",
+    statusBarStyle: "black-translucent", // Full screen, overlay the status bar
     title: "Cây Tình Yêu",
   },
   formatDetection: {
@@ -27,11 +27,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#be185d", // pink-700
+  themeColor: "#fdf2f8", // pink-50 to match page backgrounds seamlessly
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
   userScalable: false, // Ngăn zoom trên di động để giống app thật
+  viewportFit: "cover", // Đổ màu full màn hình, tràn qua cả phần tai thỏ (notch) của iPhone
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
