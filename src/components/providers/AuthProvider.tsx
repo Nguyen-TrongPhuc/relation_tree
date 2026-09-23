@@ -95,9 +95,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           updated_at: new Date().toISOString(),
         });
       },
-      () => {}, // Bỏ qua lỗi GPS một cách im lặng (không làm phiền user)
+      () => {},
       { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 }
     );
+
+    // 2. Lưu vị trí cuối cùng vào DB khi app sắp bị tắt (iOS PWA workaround)
+    const saveLocationOnExit = () => {
+      if (document.visibilityState === 'hidden' && myLocation) {
+        // Dùng navigator.sendBeacon để đảm bảo gửi được dù app đang bị giết
+        const payload = JSON.stringify({
+          last_lat: myLocation.lat,
+          last_lng: myLocation.lng,
+          last_location_at: new Date().toISOString(),
+        });
+        // Fallback: cập nhật profiles table
+        supabase.from('profiles').update({
+          last_lat: myLocation.lat,
+          last_lng: myLocation.lng,
+          last_location_at: new Date().toISOString(),
+        }).eq('id', user.id).then(() => {});
+      }
+    };
+    document.addEventListener('visibilitychange', saveLocationOnExit);
+
+    // 3. Load vị trí cuối cùng đã lưu của người ấy từ DB (phòng trường hợp họ đã tắt app)
+    const loadSavedPartnerLocation = async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('last_lat, last_lng, last_location_at')
+        .eq('id', partnerProfile.id)
+        .single();
+      
+      if (data?.last_lat && data?.last_lng) {
+        setPartnerLocation({
+          lat: data.last_lat,
+          lng: data.last_lng,
+          updated_at: data.last_location_at || '',
+        });
+      }
+    };
+    loadSavedPartnerLocation();
 
     // 2. Tạo kênh Realtime để chia sẻ vị trí
     const channel = supabase.channel('couple_location');
@@ -147,6 +184,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (watchIdRef.current !== null) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
+      document.removeEventListener('visibilitychange', saveLocationOnExit);
       supabase.removeChannel(channel);
       channelRef.current = null;
     };
