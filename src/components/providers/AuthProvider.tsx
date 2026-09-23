@@ -203,13 +203,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [myLocation, user]);
 
   const loadPairData = async (userId: string) => {
-    const { data: pair } = await supabase
+    const { data: pairs } = await supabase
       .from('friendships')
       .select('id, sender_id, receiver_id, background_url')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .eq('status', 'accepted')
-      .maybeSingle();
+      .limit(1);
 
+    const pair = pairs?.[0];
     if (pair) {
       setPairData(pair);
       const partnerId = pair.sender_id === userId ? pair.receiver_id : pair.sender_id;
@@ -233,3 +234,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     </AuthContext.Provider>
   );
 }
+
+
