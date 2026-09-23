@@ -467,109 +467,158 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
               {!isSearching && <p className="mt-1">Hãy gửi lời chào đến người ấy nhé! 💕</p>}
             </div>
           ) : (
-            displayedMessages.map((msg) => {
-              const isMe = msg.sender_id === currentUserId;
-              const profile = Array.isArray(msg.profiles) ? msg.profiles[0] : msg.profiles;
-              const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${msg.sender_id}`;
+            {(() => {
+              let lastDateStr = '';
+              return displayedMessages.map((msg, index) => {
+                const msgDate = new Date(msg.created_at);
+                const dateStr = msgDate.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+                
+                let dateHeader = null;
+                if (dateStr !== lastDateStr) {
+                  const today = new Date();
+                  const yesterday = new Date(today);
+                  yesterday.setDate(yesterday.getDate() - 1);
+                  
+                  let displayDate = dateStr;
+                  if (dateStr === today.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })) {
+                    displayDate = 'Hôm nay';
+                  } else if (dateStr === yesterday.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })) {
+                    displayDate = 'Hôm qua';
+                  }
+                  
+                  dateHeader = (
+                    <div key={`date-${msg.id}`} className="flex justify-center my-6 w-full">
+                      <span className="text-[11px] font-medium bg-black/10 text-gray-600 px-3 py-1 rounded-full backdrop-blur-md">
+                        {displayDate}
+                      </span>
+                    </div>
+                  );
+                  lastDateStr = dateStr;
+                }
 
-              return (
-                <div key={msg.id} className={`flex w-full gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                  {!isMe && (
-                    <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-pink-100 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
-                  )}
-                    <div className={`p-3 max-w-[75%] shadow-sm whitespace-pre-wrap word-break flex flex-col relative group ${
-                      isMe 
-                        ? 'bg-pink-500 text-white rounded-tr-sm items-end' 
-                        : 'bg-white text-gray-800 rounded-tl-sm items-start border border-pink-50'
-                    }`}>
-                      {msg.image_url && (
-                        <img src={msg.image_url} alt="attachment" className="rounded-xl mb-2 max-w-full h-auto max-h-64 object-contain bg-black/5" />
+                const isMe = msg.sender_id === currentUserId;
+                const profile = Array.isArray(msg.profiles) ? msg.profiles[0] : msg.profiles;
+                const avatarUrl = profile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${msg.sender_id}`;
+                const isLastMessage = index === displayedMessages.length - 1;
+
+                return (
+                  <React.Fragment key={msg.id}>
+                    {dateHeader}
+                    <div className={`flex w-full gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                      {!isMe && (
+                        <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-teal-200 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
                       )}
-                      
-                      {/* Check if this is a Call Invite */}
-                      {msg.content?.startsWith('CALL::') ? (() => {
-                        const parts = msg.content.split('::');
-                        const roomId = parts[1];
-                        const status = parts[2];
-                        const mode = parts[3];
-                        
-                        // Fake auto-miss if ringing > 2 mins (client-side only display tweak)
-                        const isRinging = status === 'RINGING';
-                        const isExpiredRinging = isRinging && (Date.now() - new Date(msg.created_at).getTime() > 2 * 60 * 1000);
-                        const displayStatus = isExpiredRinging ? 'MISSED' : status;
-                      
-                        let statusText = '';
-                        let bgColor = isMe ? 'bg-pink-600' : 'bg-teal-50';
-                        let textColor = isMe ? 'text-white' : 'text-teal-900';
-                      
-                        if (displayStatus === 'RINGING') {
-                           statusText = isMe ? 'Đang gọi...' : `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đến`;
-                        } else if (displayStatus === 'ACCEPTED') {
-                           statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đang diễn ra`;
-                        } else if (displayStatus === 'ENDED') {
-                           statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đã kết thúc`;
-                           bgColor = isMe ? 'bg-pink-700/50' : 'bg-gray-100';
-                           textColor = isMe ? 'text-pink-50' : 'text-gray-500';
-                        } else if (displayStatus === 'MISSED') {
-                           statusText = isMe ? 'Cuộc gọi nhỡ' : 'Bạn đã lỡ một cuộc gọi';
-                           bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
-                           textColor = isMe ? 'text-white' : 'text-red-500';
-                        } else if (displayStatus === 'REJECTED') {
-                           statusText = isMe ? 'Người ấy đã từ chối' : 'Bạn đã từ chối cuộc gọi';
-                           bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
-                           textColor = isMe ? 'text-white' : 'text-red-500';
-                        }
-                      
-                        return (
-                          <div className={`flex flex-col p-3 rounded-lg min-w-[200px] ${bgColor} ${textColor}`}>
-                             <div className="flex items-center gap-3">
-                               <div className={`p-2 rounded-full ${isMe ? 'bg-white/20' : 'bg-gray-200'}`}>
-                                 {mode === 'video' ? <Video size={18} /> : <Phone size={18} />}
-                               </div>
-                               <span className="font-semibold text-sm">{statusText}</span>
-                             </div>
-                             
-                             {displayStatus === 'ACCEPTED' && (
-                               <div className="flex gap-2 mt-3">
-                                 <button onClick={() => {
-                                   setCallMode(mode as any);
-                                   setActiveCallId(msg.id);
-                                   setActiveRoomId(roomId);
-                                 }} className="flex-1 bg-green-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-green-600 transition-transform active:scale-95">
-                                   Trở lại phòng gọi
-                                 </button>
-                               </div>
-                             )}
-                             {displayStatus === 'RINGING' && !isMe && (
-                               <div className="flex gap-2 mt-3">
-                                 <button onClick={() => handleJoinCall(msg.id, roomId, mode as any)} className="flex-1 bg-green-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-green-600 transition-transform active:scale-95">Nghe máy</button>
-                                 <button onClick={() => handleRejectCall(msg.id, roomId, mode as any)} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Từ chối</button>
-                               </div>
-                             )}
-                             {displayStatus === 'RINGING' && isMe && (
-                               <div className="flex gap-2 mt-3">
-                                 <button onClick={() => handleJoinCall(msg.id, roomId, mode as any)} className="flex-1 bg-pink-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-pink-600 transition-transform active:scale-95">Vào phòng</button>
-                                 <button onClick={async () => {
-                                   await updateMessageContent(msg.id, `CALL::${roomId}::MISSED::${mode}`);
-                                   if (activeCallId === msg.id) {
-                                     setCallMode(null); setActiveCallId(null); setActiveRoomId(null);
-                                   }
-                                 }} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Hủy cuộc gọi</button>
-                               </div>
-                             )}
+                      <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
+                        <div className={`p-3 shadow-sm whitespace-pre-wrap word-break flex flex-col relative group ${
+                          isMe 
+                            ? 'bg-pink-600 text-white rounded-tr-sm rounded-l-2xl rounded-br-2xl items-end' 
+                            : 'bg-teal-50 text-teal-900 border border-teal-100 rounded-tl-sm rounded-r-2xl rounded-bl-2xl items-start'
+                        }`}>
+                          {msg.image_url && (
+                            <img src={msg.image_url} alt="attachment" className="rounded-xl mb-2 max-w-full h-auto max-h-64 object-contain bg-black/5" />
+                          )}
+                          
+                          {/* Check if this is a Call Invite */}
+                          {msg.content?.startsWith('CALL::') ? (() => {
+                            const parts = msg.content.split('::');
+                            const roomId = parts[1];
+                            const status = parts[2];
+                            const mode = parts[3];
+                            
+                            const isRinging = status === 'RINGING';
+                            const isExpiredRinging = isRinging && (Date.now() - new Date(msg.created_at).getTime() > 2 * 60 * 1000);
+                            const displayStatus = isExpiredRinging ? 'MISSED' : status;
+                          
+                            let statusText = '';
+                            let bgColor = isMe ? 'bg-pink-600' : 'bg-teal-50';
+                            let textColor = isMe ? 'text-white' : 'text-teal-900';
+                          
+                            if (displayStatus === 'RINGING') {
+                               statusText = isMe ? 'Đang gọi...' : `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đến`;
+                            } else if (displayStatus === 'ACCEPTED') {
+                               statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đang diễn ra`;
+                            } else if (displayStatus === 'ENDED') {
+                               statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đã kết thúc`;
+                               bgColor = isMe ? 'bg-pink-700/50' : 'bg-gray-100';
+                               textColor = isMe ? 'text-pink-50' : 'text-gray-500';
+                            } else if (displayStatus === 'MISSED') {
+                               statusText = isMe ? 'Cuộc gọi nhỡ' : 'Bạn đã lỡ một cuộc gọi';
+                               bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
+                               textColor = isMe ? 'text-white' : 'text-red-500';
+                            } else if (displayStatus === 'REJECTED') {
+                               statusText = isMe ? 'Người ấy đã từ chối' : 'Bạn đã từ chối cuộc gọi';
+                               bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
+                               textColor = isMe ? 'text-white' : 'text-red-500';
+                            }
+                          
+                            return (
+                              <div className={`flex flex-col p-3 rounded-lg min-w-[200px] ${bgColor} ${textColor}`}>
+                                 <div className="flex items-center gap-3">
+                                   <div className={`p-2 rounded-full ${isMe ? 'bg-white/20' : 'bg-gray-200'}`}>
+                                     {mode === 'video' ? <Video size={18} /> : <Phone size={18} />}
+                                   </div>
+                                   <span className="font-semibold text-sm">{statusText}</span>
+                                 </div>
+                                 
+                                 {displayStatus === 'ACCEPTED' && (
+                                   <div className="flex gap-2 mt-3">
+                                     <button onClick={() => {
+                                       setCallMode(mode as any);
+                                       setActiveCallId(msg.id);
+                                       setActiveRoomId(roomId);
+                                     }} className="flex-1 bg-green-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-green-600 transition-transform active:scale-95">
+                                       Trở lại phòng gọi
+                                     </button>
+                                   </div>
+                                 )}
+                                 {displayStatus === 'RINGING' && !isMe && (
+                                   <div className="flex gap-2 mt-3">
+                                     <button onClick={() => handleJoinCall(msg.id, roomId, mode as any)} className="flex-1 bg-green-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-green-600 transition-transform active:scale-95">Nghe máy</button>
+                                     <button onClick={() => handleRejectCall(msg.id, roomId, mode as any)} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Từ chối</button>
+                                   </div>
+                                 )}
+                                 {displayStatus === 'RINGING' && isMe && (
+                                   <div className="flex gap-2 mt-3">
+                                     <button onClick={async () => {
+                                       await supabase.from('messages').update({ content: `CALL::${roomId}::MISSED::${mode}` }).eq('id', msg.id);
+                                       if (activeCallId === msg.id) {
+                                         setCallMode(null); setActiveCallId(null); setActiveRoomId(null);
+                                       }
+                                     }} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Hủy cuộc gọi</button>
+                                   </div>
+                                 )}
+                              </div>
+                            );
+                          })() : (
+                            msg.content && <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                          )}
+
+                          <div className={`mt-1 flex items-center gap-1 text-[9.5px] ${isMe ? 'text-pink-100' : 'text-teal-900/50'}`}>
+                            <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                           </div>
-                        );
-                      })() : (
-                        msg.content && <p className="text-sm leading-relaxed whitespace-pre-wrap">{msg.content}</p>
-                      )}
+                        </div>
 
-                      <p className={`mt-1 text-[9px] ${isMe ? 'text-pink-50' : 'text-gray-400'}`}>
-                        {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                </div>
-              );
-            })
+                        {/* Message Status */}
+                        {isMe && isLastMessage && (
+                          <div className="text-[11px] font-medium text-pink-700/60 mt-1 mr-1 flex items-center gap-1">
+                            {msg.id < 0 ? (
+                              <>
+                                <Loader2 size={10} className="animate-spin" />
+                                <span>Đang gửi...</span>
+                              </>
+                            ) : isPartnerOnline ? (
+                              <span>Đã xem</span>
+                            ) : (
+                              <span>Đã gửi</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </React.Fragment>
+                );
+              });
+            })()}
           )}
           </div>
         </div>
