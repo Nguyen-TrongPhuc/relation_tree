@@ -28,6 +28,51 @@ function formatLastActive(dateStr?: string) {
   return `V·∫Øng m·∫∑t ${diffDays} ng√†y`;
 }
 
+function MessageStatus({ msg, isPartnerOnline, partnerLastActive }: { msg: any, isPartnerOnline: boolean, partnerLastActive: string | undefined }) {
+  const [timePassed, setTimePassed] = useState(false);
+
+  useEffect(() => {
+    if (msg.id > 0) {
+      // TÌnh to·n kho?ng th?i gian ? trÙi qua
+      const sentTime = new Date(msg.created_at).getTime();
+      const diff = Date.now() - sentTime;
+      
+      if (diff >= 2000) {
+        setTimePassed(true);
+      } else {
+        const timer = setTimeout(() => setTimePassed(true), 2000 - diff);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [msg.id, msg.created_at]);
+
+  let statusText = '';
+  let showIcon = false;
+
+  if (msg.id < 0) {
+    statusText = '–ang g?i...';
+    showIcon = true;
+  } else {
+    const sentTime = new Date(msg.created_at).getTime();
+    const lastActive = partnerLastActive ? new Date(partnerLastActive).getTime() : 0;
+
+    if (isPartnerOnline || lastActive > sentTime) {
+      statusText = '–? xem';
+    } else if (timePassed) {
+      statusText = '–? nh?n';
+    } else {
+      statusText = '–? g?i';
+    }
+  }
+
+  return (
+    <div className="text-[11px] font-medium text-pink-700/60 mt-1 mr-1 flex items-center gap-1">
+      {showIcon && <Loader2 size={10} className="animate-spin" />}
+      <span>{statusText}</span>
+    </div>
+  );
+}
+
 export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline, partnerProfile, chatBackgroundUrl: initialBgUrl }: ChatWidgetProps) {
   const [messages, setMessages] = useState<any[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -599,31 +644,13 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         </div>
 
                         {/* Message Status */}
-                        {isMe && isLastMessage && (() => {
-                          let statusText = '';
-                          let showIcon = false;
-                          
-                          if (msg.id < 0) {
-                            statusText = 'ƒêang g·ª≠i...';
-                            showIcon = true;
-                          } else {
-                            const sentTime = new Date(msg.created_at).getTime();
-                            const lastActiveTime = livePartnerProfile?.last_active ? new Date(livePartnerProfile.last_active).getTime() : 0;
-                            
-                            if (isPartnerOnline || lastActiveTime > sentTime) {
-                              statusText = 'ƒê√£ xem';
-                            } else {
-                              statusText = 'ƒê√£ nh·∫≠n';
-                            }
-                          }
-
-                          return (
-                            <div className="text-[11px] font-medium text-pink-700/60 mt-1 mr-1 flex items-center gap-1">
-                              {showIcon && <Loader2 size={10} className="animate-spin" />}
-                              <span>{statusText}</span>
-                            </div>
-                          );
-                        })()}
+                        {isMe && isLastMessage && (
+                          <MessageStatus 
+                            msg={msg} 
+                            isPartnerOnline={isPartnerOnline} 
+                            partnerLastActive={livePartnerProfile?.last_active} 
+                          />
+                        )}
                       </div>
                     </div>
                   </React.Fragment>
