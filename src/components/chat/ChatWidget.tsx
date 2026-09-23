@@ -179,8 +179,14 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     const roomId = `${safeUserId}_${Date.now()}`;
     const textMsg = `CALL::${roomId}::RINGING::${mode}`;
     
-    const res = await sendMessage(textMsg);
-    if (res.success && res.message) {
+    const { data: insertedMsg, error } = await supabase.from('messages').insert({ 
+      sender_id: currentUserId, 
+      receiver_id: livePartnerProfile!.id, 
+      content: textMsg 
+    }).select('*').single();
+    
+    if (!error && insertedMsg) {
+      const res = { message: insertedMsg };
       setCallMode(mode);
       setCallState('ringing'); // Chỉ đổ chuông, CHƯA mở ZegoCloud
       setActiveCallId(res.message.id);
@@ -194,12 +200,12 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     setActiveCallId(msgId);
     setActiveRoomId(roomId);
     setIncomingCall(null); // Tắt popup cuộc gọi đến
-    await updateMessageContent(msgId, `CALL::${roomId}::ACCEPTED::${mode}`);
+    await supabase.from('messages').update({ content: `CALL::${roomId}::ACCEPTED::${mode}` }).eq('id', msgId);
   };
 
   const handleRejectCall = async (msgId: number, roomId: string, mode: 'audio' | 'video') => {
     setIncomingCall(null);
-    await updateMessageContent(msgId, `CALL::${roomId}::REJECTED::${mode}`);
+    await supabase.from('messages').update({ content: `CALL::${roomId}::REJECTED::${mode}` }).eq('id', msgId);
   };
 
   // Lắng nghe thay đổi tin nhắn để đồng bộ trạng thái cuộc gọi
@@ -239,7 +245,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       const currentMsg = messages.find(m => m.id === activeCallId);
       const isRinging = currentMsg?.content.includes('::RINGING::');
       const newStatus = isRinging ? 'MISSED' : 'ENDED';
-      await updateMessageContent(activeCallId, `CALL::${activeRoomId}::${newStatus}::${callMode}`);
+      await supabase.from('messages').update({ content: `CALL::${activeRoomId}::${newStatus}::${callMode}` }).eq('id', activeCallId);
     }
     setCallMode(null);
     setCallState(null);
@@ -267,9 +273,14 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       setAttachment(null);
     }
     
-    const res = await sendMessage(text, uploadedImageUrl);
-    if (!res.success) {
-      alert('Lỗi gửi tin nhắn: ' + (res.error || 'Unknown error'));
+    const { error } = await supabase.from('messages').insert({ 
+      sender_id: currentUserId, 
+      receiver_id: livePartnerProfile!.id, 
+      content: text, 
+      image_url: uploadedImageUrl || null 
+    });
+    if (error) {
+      alert('Lỗi gửi tin nhắn: ' + error.message);
     }
     setIsSending(false);
     scrollToBottom();
