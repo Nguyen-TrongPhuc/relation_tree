@@ -9,7 +9,7 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [initialData, setInitialData] = useState({ displayName: '', avatarUrl: '', backgroundUrl: '' });
+  const [initialData, setInitialData] = useState({ displayName: '', avatarUrl: '', backgroundUrl: '', email: '' });
   const [partnerProfile, setPartnerProfile] = useState<{ displayName: string, avatarUrl: string } | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -26,7 +26,8 @@ export default function ProfilePage() {
           setInitialData(prev => ({
             ...prev,
             displayName: data.display_name || '',
-            avatarUrl: data.avatar_url || ''
+            avatarUrl: data.avatar_url || '',
+            email: user.email || ''
           }));
           setPreviewUrl(data.avatar_url || null);
         }
@@ -141,6 +142,17 @@ export default function ProfilePage() {
               Tải ảnh từ máy
               <input type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
             </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-pink-800 mb-1">Email</label>
+            <input
+              type="email"
+              disabled
+              defaultValue={initialData.email}
+              className="w-full p-3 border border-pink-100 rounded-xl bg-gray-50 text-gray-500 cursor-not-allowed transition"
+              title="Không thể đổi email hiện tại"
+            />
           </div>
 
           <div>

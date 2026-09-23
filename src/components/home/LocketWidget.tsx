@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Smile, Loader2, Send, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Camera, Smile, Loader2, Send, Clock, Grid } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import PreviewModal from '../locket/PreviewModal';
+import Link from 'next/link';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
 
@@ -19,6 +20,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
   useEffect(() => {
@@ -59,6 +61,9 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
     });
     setPhotoFile(null);
     setCurrentIndex(0);
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({ left: 0, behavior: 'smooth' });
+    }
   };
 
   const handleReact = async (emoji: string) => {
@@ -106,10 +111,31 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
     if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const container = e.currentTarget;
+    const scrollPosition = container.scrollLeft;
+    const width = container.clientWidth;
+    // Calculate index based on scroll position (round to nearest integer)
+    const newIndex = Math.round(scrollPosition / width);
+    if (newIndex !== currentIndex && newIndex >= 0 && newIndex < moments.length) {
+      setCurrentIndex(newIndex);
+    }
+  };
+
   const currentMoment = moments[currentIndex];
 
   return (
     <div className="w-full flex flex-col items-center gap-4">
+      {/* Header Buttons */}
+      <div className="w-full max-w-[320px] flex justify-between px-2">
+        <Link href="/locket?tab=timeline" className="flex items-center gap-1.5 text-pink-700 bg-pink-100/50 hover:bg-pink-100 px-3 py-1.5 rounded-full text-xs font-semibold transition">
+          <Clock size={14} /> Dòng thời gian
+        </Link>
+        <Link href="/locket?tab=gallery" className="flex items-center gap-1.5 text-pink-700 bg-pink-100/50 hover:bg-pink-100 px-3 py-1.5 rounded-full text-xs font-semibold transition">
+          <Grid size={14} /> Kho ảnh
+        </Link>
+      </div>
+
       <input 
         type="file" 
         accept="image/*" 
@@ -119,83 +145,70 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         onChange={handleFileSelect} 
       />
 
-      <div className="relative w-full aspect-square max-w-[320px] bg-gray-100 rounded-[2rem] shadow-xl overflow-hidden border-4 border-white group">
+      <div className="relative w-full aspect-square max-w-[320px] bg-gray-100 rounded-[2rem] shadow-xl border-4 border-white group overflow-hidden">
         {loading ? (
           <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-pink-300" />
           </div>
-        ) : currentMoment ? (
-          <>
-            <img src={currentMoment.image_url} alt="Moment" className="w-full h-full object-cover" />
-            
-            {/* Header info */}
-            <div className="absolute top-4 left-4 right-4 flex justify-between items-center drop-shadow-md z-10">
-              <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full">
-                <img 
-                  src={currentMoment.sender_id === userProfile.id ? userProfile.avatar_url : partnerProfile.avatar_url} 
-                  className="w-5 h-5 rounded-full object-cover" 
-                />
-                <span className="text-white text-xs font-medium">
-                  {currentMoment.sender_id === userProfile.id ? 'Bạn' : partnerProfile.display_name}
-                </span>
-              </div>
-              <span className="text-white text-[10px] bg-black/30 backdrop-blur-md px-2 py-1 rounded-full">
-                {new Date(currentMoment.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </span>
-            </div>
-
-            {/* Caption */}
-            {currentMoment.content && currentMoment.content !== '📸 Vừa chia sẻ một khoảnh khắc' && (
-              <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-10">
-                <span className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-2xl text-sm font-medium inline-block shadow-lg">
-                  {currentMoment.content}
-                </span>
-              </div>
-            )}
-
-            {/* Reactions display */}
-            {currentMoment.reactions && Object.values(currentMoment.reactions).length > 0 && (
-              <div className="absolute bottom-4 right-4 flex -space-x-2 z-10">
-                {Object.entries(currentMoment.reactions).map(([uid, emoji]: any) => (
-                  <div key={uid} className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-md border border-gray-100 text-sm animate-in zoom-in">
-                    {emoji}
+        ) : moments.length > 0 ? (
+          <div 
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex h-full w-full overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+          >
+            {moments.map((moment, idx) => (
+              <div key={moment.id} className="min-w-full h-full flex-shrink-0 snap-center relative">
+                <img src={moment.image_url} alt="Moment" className="w-full h-full object-cover" />
+                
+                {/* Header info */}
+                <div className="absolute top-4 left-4 right-4 flex justify-between items-center drop-shadow-md z-10 pointer-events-none">
+                  <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full">
+                    <img 
+                      src={moment.sender_id === userProfile.id ? userProfile.avatar_url : partnerProfile.avatar_url} 
+                      className="w-5 h-5 rounded-full object-cover" 
+                    />
+                    <span className="text-white text-xs font-medium">
+                      {moment.sender_id === userProfile.id ? 'Bạn' : partnerProfile.display_name}
+                    </span>
                   </div>
-                ))}
-              </div>
-            )}
-            
-            {/* Camera trigger overlay */}
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 bg-black/20 transition-opacity flex items-center justify-center z-20"
-            >
-              <div className="bg-white/90 p-4 rounded-full shadow-lg backdrop-blur-sm">
-                <Camera className="text-pink-600" size={32} />
-              </div>
-            </button>
-            
-            {/* Navigation Arrows */}
-            {moments.length > 1 && (
-              <>
-                {currentIndex < moments.length - 1 && (
-                  <button 
-                    onClick={() => setCurrentIndex(i => i + 1)} 
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/50 backdrop-blur-md p-2 rounded-full shadow-md z-30 hover:bg-white/80 active:scale-95"
-                  >
-                    <ChevronLeft size={20} className="text-gray-800" />
-                  </button>
+                  <span className="text-white text-[10px] bg-black/30 backdrop-blur-md px-2 py-1 rounded-full">
+                    {new Date(moment.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
+
+                {/* Caption */}
+                {moment.content && moment.content !== '📸 Vừa chia sẻ một khoảnh khắc' && (
+                  <div className="absolute bottom-16 left-0 right-0 px-4 text-center z-10 pointer-events-none">
+                    <span className="bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-2xl text-sm font-medium inline-block shadow-lg">
+                      {moment.content}
+                    </span>
+                  </div>
                 )}
-                {currentIndex > 0 && (
-                  <button 
-                    onClick={() => setCurrentIndex(i => i - 1)} 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/50 backdrop-blur-md p-2 rounded-full shadow-md z-30 hover:bg-white/80 active:scale-95"
-                  >
-                    <ChevronRight size={20} className="text-gray-800" />
-                  </button>
+
+                {/* Reactions display */}
+                {moment.reactions && Object.values(moment.reactions).length > 0 && (
+                  <div className="absolute bottom-4 right-4 flex -space-x-2 z-10 pointer-events-none">
+                    {Object.entries(moment.reactions).map(([uid, emoji]: any) => (
+                      <div key={uid} className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-md border border-gray-100 text-sm animate-in zoom-in">
+                        {emoji}
+                      </div>
+                    ))}
+                  </div>
                 )}
-              </>
-            )}
-          </>
+                
+                {/* Camera trigger overlay (nhấp vào vùng trống để chụp ảnh mới) */}
+                <button 
+                  onClick={() => fileInputRef.current?.click()}
+                  className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 bg-black/20 transition-opacity flex items-center justify-center z-20"
+                >
+                  <div className="bg-white/90 p-4 rounded-full shadow-lg backdrop-blur-sm">
+                    <Camera className="text-pink-600" size={32} />
+                  </div>
+                </button>
+              </div>
+            ))}
+          </div>
         ) : (
           <button 
             onClick={() => fileInputRef.current?.click()}
@@ -207,7 +220,21 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
             <p className="text-pink-600 font-medium text-sm">Chạm để gửi khoảnh khắc</p>
           </button>
         )}
+
+        {/* Dots Indicator */}
+        {moments.length > 1 && (
+          <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 z-30 pointer-events-none">
+            {moments.map((_, i) => (
+              <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* Style hide-scrollbar */}
+      <style dangerouslySetInnerHTML={{__html: `
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+      `}} />
 
       {/* Reply and React Box */}
       {currentMoment && currentMoment.sender_id === partnerProfile.id && (
@@ -239,7 +266,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
 
           {/* Emoji Popup */}
           {showEmojis && (
-            <div className="absolute bottom-[110%] left-0 bg-white shadow-xl rounded-full px-4 py-2 flex gap-3 border border-gray-100 animate-in slide-in-from-bottom-2">
+            <div className="absolute bottom-[110%] left-0 bg-white shadow-xl rounded-full px-4 py-2 flex gap-3 border border-gray-100 animate-in slide-in-from-bottom-2 z-40">
               {EMOJIS.map(emoji => (
                 <button 
                   key={emoji} 

@@ -72,6 +72,12 @@ export default function LoginPage() {
             />
           </div>
           
+          <div className="flex justify-end">
+            <Link href="/forgot-password" className="text-sm font-semibold text-pink-600 hover:text-pink-800 transition">
+              Quên mật khẩu?
+            </Link>
+          </div>
+          
           {error && (
             <div className="p-3 bg-red-50/80 border border-red-100 text-red-600 text-sm rounded-xl text-center">
               {error}
