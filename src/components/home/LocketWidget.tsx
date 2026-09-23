@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Heart, MessageCircle, Smile, X, Loader2, Send } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import CameraModal from './CameraModal';
+import CameraModal from '@/components/locket/CameraModal';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
 
