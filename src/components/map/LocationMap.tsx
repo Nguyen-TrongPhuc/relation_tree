@@ -1,11 +1,11 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
-import { createClient } from '@/lib/supabase/client';
 import { ArrowLeft, Navigation, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/providers/AuthProvider';
 import 'leaflet/dist/leaflet.css';
 
 // Custom avatar marker
@@ -38,7 +38,6 @@ function createAvatarIcon(avatarUrl: string, isOnline: boolean) {
   });
 }
 
-// Component to recenter map
 function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   const map = useMap();
   useEffect(() => {
@@ -47,114 +46,14 @@ function RecenterMap({ lat, lng }: { lat: number; lng: number }) {
   return null;
 }
 
-interface LocationMapProps {
-  userProfile: any;
-  partnerProfile: any;
-}
-
-export default function LocationMap({ userProfile, partnerProfile }: LocationMapProps) {
-  const supabase = createClient();
-  const [myLocation, setMyLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [partnerLocation, setPartnerLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [isPartnerOnline, setIsPartnerOnline] = useState(false);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export default function LocationMap() {
+  const { myLocation, partnerLocation, isPartnerAppOnline, userProfile, partnerProfile } = useAuth();
   const [centered, setCentered] = useState<'me' | 'partner' | null>(null);
-  const watchIdRef = useRef<number | null>(null);
-
-  // 1. Lấy vị trí hiện tại của mình
-  useEffect(() => {
-    if (!navigator.geolocation) {
-      setError('Trình duyệt không hỗ trợ định vị');
-      setLoading(false);
-      return;
-    }
-
-    watchIdRef.current = navigator.geolocation.watchPosition(
-      (pos) => {
-        const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude };
-        setMyLocation(loc);
-        setLoading(false);
-      },
-      (err) => {
-        setError('Không thể lấy vị trí. Vui lòng bật GPS và cho phép truy cập vị trí.');
-        setLoading(false);
-      },
-      { enableHighAccuracy: true, maximumAge: 10000, timeout: 15000 }
-    );
-
-    return () => {
-      if (watchIdRef.current !== null) {
-        navigator.geolocation.clearWatch(watchIdRef.current);
-      }
-    };
-  }, []);
-
-  // 2. Chia sẻ vị trí của mình qua Supabase Realtime
-  useEffect(() => {
-    if (!myLocation || !userProfile?.id) return;
-
-    const channel = supabase.channel('couple_location');
-    
-    channel.subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({
-          user_id: userProfile.id,
-          lat: myLocation.lat,
-          lng: myLocation.lng,
-          updated_at: new Date().toISOString(),
-        });
-      }
-    });
-
-    // Lắng nghe vị trí của người kia
-    channel.on('presence', { event: 'sync' }, () => {
-      const state = channel.presenceState();
-      for (const key of Object.keys(state)) {
-        const presences = state[key] as any[];
-        for (const p of presences) {
-          if (p.user_id === partnerProfile?.id) {
-            setPartnerLocation({ lat: p.lat, lng: p.lng });
-            setIsPartnerOnline(true);
-          }
-        }
-      }
-    });
-
-    channel.on('presence', { event: 'leave' }, ({ leftPresences }: any) => {
-      for (const p of leftPresences) {
-        if (p.user_id === partnerProfile?.id) {
-          setIsPartnerOnline(false);
-        }
-      }
-    });
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [myLocation, userProfile?.id, partnerProfile?.id, supabase]);
-
-  // Cập nhật vị trí mỗi 10 giây
-  useEffect(() => {
-    if (!myLocation || !userProfile?.id) return;
-
-    const interval = setInterval(async () => {
-      const channel = supabase.channel('couple_location');
-      await channel.track({
-        user_id: userProfile.id,
-        lat: myLocation.lat,
-        lng: myLocation.lng,
-        updated_at: new Date().toISOString(),
-      });
-    }, 10000);
-
-    return () => clearInterval(interval);
-  }, [myLocation, userProfile?.id, supabase]);
 
   const myAvatarUrl = userProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile?.id}`;
   const partnerAvatarUrl = partnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile?.id}`;
 
-  if (loading) {
+  if (!myLocation) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-pink-50 via-white to-teal-50">
         <div className="flex flex-col items-center gap-4">
@@ -166,26 +65,12 @@ export default function LocationMap({ userProfile, partnerProfile }: LocationMap
     );
   }
 
-  if (error) {
-    return (
-      <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-pink-50 via-white to-teal-50 p-6">
-        <div className="text-center space-y-4">
-          <Navigation className="w-16 h-16 text-pink-300 mx-auto" />
-          <p className="text-pink-700 font-medium">{error}</p>
-          <Link href="/" className="inline-block px-6 py-2 bg-pink-500 text-white rounded-full text-sm font-bold">
-            Quay lại
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const center = myLocation || { lat: 10.8231, lng: 106.6297 }; // Mặc định: HCM
+  const center = myLocation;
 
   return (
     <div className="relative h-[100dvh] w-full">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-[1000] safe-area-top">
+      <div className="absolute top-0 left-0 right-0 z-[1000]">
         <div className="flex items-center justify-between px-4 py-3 bg-white/90 backdrop-blur-md shadow-sm border-b border-pink-100">
           <Link href="/" className="text-pink-600 hover:bg-pink-50 p-2 rounded-full transition-colors">
             <ArrowLeft size={20} />
@@ -203,62 +88,52 @@ export default function LocationMap({ userProfile, partnerProfile }: LocationMap
         zoomControl={false}
         attributionControl={false}
       >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
 
         {/* Marker của mình */}
-        {myLocation && (
-          <Marker
-            position={[myLocation.lat, myLocation.lng]}
-            icon={createAvatarIcon(myAvatarUrl, true)}
-          >
-            <Popup>
-              <div className="text-center">
-                <p className="font-bold text-pink-700">{userProfile?.display_name || 'Bạn'}</p>
-                <p className="text-xs text-gray-500">Vị trí hiện tại</p>
-              </div>
-            </Popup>
-          </Marker>
-        )}
+        <Marker
+          position={[myLocation.lat, myLocation.lng]}
+          icon={createAvatarIcon(myAvatarUrl, true)}
+        >
+          <Popup>
+            <div className="text-center">
+              <p className="font-bold text-pink-700">{userProfile?.display_name || 'Bạn'}</p>
+              <p className="text-xs text-gray-500">Vị trí hiện tại</p>
+            </div>
+          </Popup>
+        </Marker>
 
         {/* Marker của người ấy */}
         {partnerLocation && (
           <Marker
             position={[partnerLocation.lat, partnerLocation.lng]}
-            icon={createAvatarIcon(partnerAvatarUrl, isPartnerOnline)}
+            icon={createAvatarIcon(partnerAvatarUrl, isPartnerAppOnline)}
           >
             <Popup>
               <div className="text-center">
                 <p className="font-bold text-teal-700">{partnerProfile?.display_name || 'Người ấy'}</p>
                 <p className="text-xs text-gray-500">
-                  {isPartnerOnline ? 'Đang cập nhật vị trí' : 'Vị trí lần cuối'}
+                  {isPartnerAppOnline ? 'Đang cập nhật vị trí' : 'Vị trí lần cuối'}
                 </p>
               </div>
             </Popup>
           </Marker>
         )}
 
-        {centered === 'me' && myLocation && (
-          <RecenterMap lat={myLocation.lat} lng={myLocation.lng} />
-        )}
-        {centered === 'partner' && partnerLocation && (
-          <RecenterMap lat={partnerLocation.lat} lng={partnerLocation.lng} />
-        )}
+        {centered === 'me' && <RecenterMap lat={myLocation.lat} lng={myLocation.lng} />}
+        {centered === 'partner' && partnerLocation && <RecenterMap lat={partnerLocation.lat} lng={partnerLocation.lng} />}
       </MapContainer>
 
       {/* Bottom Controls */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-[1000] flex gap-3">
-        {/* Nút tập trung vào mình */}
         <button
           onClick={() => setCentered('me')}
           className="flex items-center gap-2 px-4 py-3 bg-pink-500 text-white rounded-full shadow-lg hover:bg-pink-600 active:scale-95 transition-all font-medium text-sm"
         >
-          <img src={myAvatarUrl} className="w-6 h-6 rounded-full border border-white" alt="" />
+          <img src={myAvatarUrl} className="w-6 h-6 rounded-full border border-white object-cover" alt="" />
           Vị trí của tôi
         </button>
 
-        {/* Nút tập trung vào người kia */}
         <button
           onClick={() => setCentered('partner')}
           disabled={!partnerLocation}
@@ -268,16 +143,24 @@ export default function LocationMap({ userProfile, partnerProfile }: LocationMap
               : 'bg-gray-300 text-gray-500 cursor-not-allowed'
           }`}
         >
-          <img src={partnerAvatarUrl} className="w-6 h-6 rounded-full border border-white" alt="" />
+          <img src={partnerAvatarUrl} className="w-6 h-6 rounded-full border border-white object-cover" alt="" />
           {partnerLocation ? (partnerProfile?.display_name || 'Người ấy') : 'Chưa online'}
         </button>
       </div>
 
-      {/* Partner offline notice */}
+      {/* Partner status */}
       {!partnerLocation && (
         <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-md border border-teal-100">
           <p className="text-xs text-teal-700 font-medium">
-            {partnerProfile?.display_name || 'Người ấy'} chưa mở bản đồ
+            {partnerProfile?.display_name || 'Người ấy'} chưa mở app
+          </p>
+        </div>
+      )}
+
+      {partnerLocation && !isPartnerAppOnline && (
+        <div className="absolute top-20 left-1/2 -translate-x-1/2 z-[1000] bg-white/90 backdrop-blur-md px-4 py-2 rounded-full shadow-md border border-yellow-200">
+          <p className="text-xs text-yellow-700 font-medium">
+            📍 Vị trí lần cuối của {partnerProfile?.display_name || 'người ấy'}
           </p>
         </div>
       )}

@@ -1,8 +1,14 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import type { User } from '@supabase/supabase-js';
+
+interface LocationData {
+  lat: number;
+  lng: number;
+  updated_at: string;
+}
 
 interface AuthContextType {
   user: User | null;
@@ -10,6 +16,9 @@ interface AuthContextType {
   pairData: any | null;
   userProfile: any | null;
   partnerProfile: any | null;
+  myLocation: LocationData | null;
+  partnerLocation: LocationData | null;
+  isPartnerAppOnline: boolean;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -18,6 +27,9 @@ const AuthContext = createContext<AuthContextType>({
   pairData: null,
   userProfile: null,
   partnerProfile: null,
+  myLocation: null,
+  partnerLocation: null,
+  isPartnerAppOnline: false,
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -29,10 +41,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userProfile, setUserProfile] = useState<any>(null);
   const [partnerProfile, setPartnerProfile] = useState<any>(null);
 
+  // Location state - chia sẻ vị trí toàn app
+  const [myLocation, setMyLocation] = useState<LocationData | null>(null);
+  const [partnerLocation, setPartnerLocation] = useState<LocationData | null>(null);
+  const [isPartnerAppOnline, setIsPartnerAppOnline] = useState(false);
+  const watchIdRef = useRef<number | null>(null);
+  const channelRef = useRef<any>(null);
+
   const supabase = createClient();
 
   useEffect(() => {
-    // Lấy session từ localStorage (persist qua PWA kill)
     const initAuth = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -45,7 +63,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initAuth();
 
-    // Lắng nghe thay đổi auth (đăng nhập, đăng xuất, refresh token)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (session?.user) {
@@ -63,6 +80,89 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Bật GPS và chia sẻ vị trí ngay khi đăng nhập (ở BẤT KỲ trang nào)
+  useEffect(() => {
+    if (!user || !partnerProfile?.id) return;
+    if (!navigator.geolocation) return;
+
+    // 1. Bắt đầu theo dõi GPS
+    watchIdRef.current = navigator.geolocation.watchPosition(
+      (pos) => {
+        setMyLocation({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          updated_at: new Date().toISOString(),
+        });
+      },
+      () => {}, // Bỏ qua lỗi GPS một cách im lặng (không làm phiền user)
+      { enableHighAccuracy: true, maximumAge: 15000, timeout: 20000 }
+    );
+
+    // 2. Tạo kênh Realtime để chia sẻ vị trí
+    const channel = supabase.channel('couple_location');
+    channelRef.current = channel;
+
+    channel.on('presence', { event: 'sync' }, () => {
+      const state = channel.presenceState();
+      let found = false;
+      for (const key of Object.keys(state)) {
+        const presences = state[key] as any[];
+        for (const p of presences) {
+          if (p.user_id === partnerProfile.id) {
+            setPartnerLocation({ lat: p.lat, lng: p.lng, updated_at: p.updated_at });
+            setIsPartnerAppOnline(true);
+            found = true;
+          }
+        }
+      }
+      if (!found) {
+        setIsPartnerAppOnline(false);
+      }
+    });
+
+    channel.on('presence', { event: 'leave' }, ({ leftPresences }: any) => {
+      for (const p of leftPresences) {
+        if (p.user_id === partnerProfile.id) {
+          setIsPartnerAppOnline(false);
+        }
+      }
+    });
+
+    channel.subscribe(async (status) => {
+      if (status === 'SUBSCRIBED') {
+        // Gửi vị trí ban đầu (nếu đã có)
+        if (myLocation) {
+          await channel.track({
+            user_id: user.id,
+            lat: myLocation.lat,
+            lng: myLocation.lng,
+            updated_at: new Date().toISOString(),
+          });
+        }
+      }
+    });
+
+    return () => {
+      if (watchIdRef.current !== null) {
+        navigator.geolocation.clearWatch(watchIdRef.current);
+      }
+      supabase.removeChannel(channel);
+      channelRef.current = null;
+    };
+  }, [user, partnerProfile?.id]);
+
+  // Cập nhật vị trí lên kênh Realtime mỗi khi GPS thay đổi
+  useEffect(() => {
+    if (!myLocation || !user || !channelRef.current) return;
+
+    channelRef.current.track({
+      user_id: user.id,
+      lat: myLocation.lat,
+      lng: myLocation.lng,
+      updated_at: myLocation.updated_at,
+    });
+  }, [myLocation, user]);
 
   const loadPairData = async (userId: string) => {
     const { data: pair } = await supabase
@@ -87,7 +187,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, pairData, userProfile, partnerProfile }}>
+    <AuthContext.Provider value={{ 
+      user, loading, pairData, userProfile, partnerProfile,
+      myLocation, partnerLocation, isPartnerAppOnline
+    }}>
       {children}
     </AuthContext.Provider>
   );

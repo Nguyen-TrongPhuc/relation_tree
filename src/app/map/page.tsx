@@ -6,7 +6,6 @@ import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
 
-// Leaflet cần window nên phải dynamic import với ssr: false
 const LocationMap = dynamic(() => import('@/components/map/LocationMap'), { 
   ssr: false,
   loading: () => (
@@ -17,7 +16,7 @@ const LocationMap = dynamic(() => import('@/components/map/LocationMap'), {
 });
 
 export default function MapPage() {
-  const { user, loading, pairData, userProfile, partnerProfile } = useAuth();
+  const { user, loading, pairData } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -28,7 +27,7 @@ export default function MapPage() {
     }
   }, [loading, user, pairData, router]);
 
-  if (loading) {
+  if (loading || !user || !pairData) {
     return (
       <div className="flex h-[100dvh] w-full items-center justify-center bg-gradient-to-br from-pink-50 via-white to-teal-50">
         <Loader2 className="w-6 h-6 animate-spin text-pink-400" />
@@ -36,9 +35,5 @@ export default function MapPage() {
     );
   }
 
-  if (!user || !pairData || !userProfile || !partnerProfile) {
-    return null;
-  }
-
-  return <LocationMap userProfile={userProfile} partnerProfile={partnerProfile} />;
+  return <LocationMap />;
 }
