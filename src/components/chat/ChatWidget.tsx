@@ -455,8 +455,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         const displayStatus = isExpiredRinging ? 'MISSED' : status;
                       
                         let statusText = '';
-                        let bgColor = isMe ? 'bg-pink-600' : 'bg-gray-50';
-                        let textColor = isMe ? 'text-white' : 'text-gray-800';
+                        let bgColor = isMe ? 'bg-pink-600' : 'bg-teal-50';
+                        let textColor = isMe ? 'text-white' : 'text-teal-900';
                       
                         if (displayStatus === 'RINGING') {
                            statusText = isMe ? 'Đang gọi...' : `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đến`;
@@ -564,7 +564,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           <button 
             type="submit"
             disabled={(!inputValue.trim() && !attachment) || isSending}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-400 to-purple-500 text-white transition-transform hover:scale-110 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
+            className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-r from-pink-400 to-teal-400 text-white transition-transform hover:scale-110 active:scale-95 disabled:opacity-50 disabled:hover:scale-100"
           >
             {isSending ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} className="-ml-0.5" />}
           </button>

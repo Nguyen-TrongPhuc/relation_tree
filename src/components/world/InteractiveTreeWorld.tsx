@@ -124,7 +124,7 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
   }, [userProfile, partnerProfile, supabase]);
 
   return (
-    <div className="flex h-[100dvh] w-full overflow-hidden bg-[#fdf2f8] relative">
+    <div className="flex h-[100dvh] w-full overflow-hidden bg-gradient-to-br from-[#fdf2f8] to-[#f0fdfa] relative">
       
       {/* Tree World Container */}
       <div className="relative h-full w-full transition-all duration-500 ease-in-out flex-shrink-0">

@@ -63,7 +63,7 @@ export default async function Home() {
   ];
 
   return (
-    <main className="flex min-h-[100dvh] w-full overflow-hidden bg-[#fdf2f8] relative font-sans text-slate-800">
+    <main className="flex min-h-[100dvh] w-full overflow-hidden bg-gradient-to-br from-[#fdf2f8] to-[#f0fdfa] relative font-sans text-slate-800">
       <InteractiveTreeWorld 
         rawDailyData={rawDailyData} 
         events={events} 
