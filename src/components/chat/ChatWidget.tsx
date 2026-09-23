@@ -82,8 +82,22 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         { event: 'INSERT', schema: 'public', table: 'messages' },
         async (payload) => {
           const newMsg = payload.new as any;
-          const res = await getMessages();
-          setMessages(res.messages || []);
+          
+          // Gắn profile cục bộ thay vì gọi getMessages() (bỏ qua Server Action)
+          let profile = null;
+          if (newMsg.sender_id === currentUserId) {
+            profile = { display_name: 'Bạn', avatar_url: null };
+          } else {
+            profile = { display_name: partnerProfile?.display_name || 'Người ấy', avatar_url: partnerProfile?.avatar_url || null };
+          }
+          newMsg.profiles = profile;
+
+          setMessages(prev => {
+            // Xóa tin nhắn ảo (optimistic) có cùng nội dung (id âm)
+            const filtered = prev.filter(m => !(m.id < 0 && m.content === newMsg.content));
+            if (filtered.some(m => m.id === newMsg.id)) return filtered;
+            return [...filtered, newMsg];
+          });
           setTimeout(scrollToBottom, 100);
 
           // Phát hiện cuộc gọi đến: tin nhắn CALL::RINGING từ người khác
@@ -257,11 +271,28 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     e.preventDefault();
     if (!inputValue.trim() && !attachment) return;
     
-    setIsSending(true);
     const text = inputValue.trim();
     setInputValue('');
     let uploadedImageUrl = '';
     
+    // 1. Optimistic UI: Hiển thị ngay lập tức trên màn hình
+    const tempId = -Date.now();
+    if (!attachment) {
+      const tempMsg = {
+        id: tempId,
+        sender_id: currentUserId,
+        receiver_id: livePartnerProfile!.id,
+        content: text,
+        image_url: null,
+        created_at: new Date().toISOString(),
+        profiles: { display_name: 'Bạn', avatar_url: null }
+      };
+      setMessages(prev => [...prev, tempMsg as any]);
+      setTimeout(scrollToBottom, 50);
+    }
+
+    setIsSending(true);
+
     if (attachment) {
       const fileExt = attachment.name.split('.').pop();
       const fileName = `chat-${currentUserId}-${Date.now()}.${fileExt}`;
@@ -279,8 +310,10 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       content: text, 
       image_url: uploadedImageUrl || null 
     });
+    
     if (error) {
       alert('Lỗi gửi tin nhắn: ' + error.message);
+      setMessages(prev => prev.filter(m => m.id !== tempId)); // Xóa tin nhắn ảo nếu lỗi
     }
     setIsSending(false);
     scrollToBottom();
