@@ -15,7 +15,7 @@ interface ChatWidgetProps {
 }
 
 function formatLastActive(dateStr?: string) {
-  if (!dateStr) return 'Đang vắng mặt ⚪';
+  if (!dateStr) return 'Đang vắng mặt ';
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 1) return 'Vừa mới truy cập';

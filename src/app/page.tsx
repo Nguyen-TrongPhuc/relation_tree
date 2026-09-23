@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { TreeDeciduous, MessageCircleHeart, Settings } from 'lucide-react';
+import { TreeDeciduous, MessageCircleHeart, Settings, MapPin } from 'lucide-react';
 import CoupleBadge from '@/components/home/CoupleBadge';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
@@ -61,32 +61,49 @@ export default function DashboardPage() {
         </div>
 
         {/* Action Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full">
-          {/* Tree Card */}
-          <Link href="/tree" className="group relative overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md p-6 shadow-lg border border-white transition-all hover:scale-[1.03] hover:shadow-xl hover:bg-white/80 flex flex-col items-center justify-center text-center gap-4 h-56">
-            <div className="absolute -right-6 -bottom-6 text-pink-100 opacity-50 group-hover:opacity-100 transition-opacity">
-              <TreeDeciduous size={120} />
-            </div>
-            <div className="h-16 w-16 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center shadow-sm relative z-10 group-hover:bg-pink-500 group-hover:text-white transition-colors">
-              <TreeDeciduous size={32} />
-            </div>
-            <div className="relative z-10">
-              <h2 className="text-xl font-bold text-pink-900 mb-1">Cây Tình Yêu</h2>
-              <p className="text-xs text-pink-700/70 font-medium">Chăm sóc cây tình yêu mỗi ngày</p>
-            </div>
-          </Link>
+        <div className="grid grid-cols-1 gap-4 w-full">
+          {/* Top Row: Tree + Chat */}
+          <div className="grid grid-cols-2 gap-4">
+            {/* Tree Card */}
+            <Link href="/tree" className="group relative overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md p-5 shadow-lg border border-white transition-all hover:scale-[1.03] hover:shadow-xl hover:bg-white/80 flex flex-col items-center justify-center text-center gap-3 h-44">
+              <div className="absolute -right-4 -bottom-4 text-pink-100 opacity-50 group-hover:opacity-100 transition-opacity">
+                <TreeDeciduous size={80} />
+              </div>
+              <div className="h-14 w-14 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center shadow-sm relative z-10 group-hover:bg-pink-500 group-hover:text-white transition-colors">
+                <TreeDeciduous size={28} />
+              </div>
+              <div className="relative z-10">
+                <h2 className="text-lg font-bold text-pink-900 mb-0.5">Cây Tình Yêu</h2>
+                <p className="text-[10px] text-pink-700/70 font-medium">Chăm sóc cây mỗi ngày</p>
+              </div>
+            </Link>
 
-          {/* Chat Card */}
-          <Link href="/chat" className="group relative overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md p-6 shadow-lg border border-white transition-all hover:scale-[1.03] hover:shadow-xl hover:bg-white/80 flex flex-col items-center justify-center text-center gap-4 h-56">
-            <div className="absolute -left-6 -bottom-6 text-pink-100 opacity-50 group-hover:opacity-100 transition-opacity">
-              <MessageCircleHeart size={120} />
+            {/* Chat Card */}
+            <Link href="/chat" className="group relative overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md p-5 shadow-lg border border-white transition-all hover:scale-[1.03] hover:shadow-xl hover:bg-white/80 flex flex-col items-center justify-center text-center gap-3 h-44">
+              <div className="absolute -left-4 -bottom-4 text-pink-100 opacity-50 group-hover:opacity-100 transition-opacity">
+                <MessageCircleHeart size={80} />
+              </div>
+              <div className="h-14 w-14 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center shadow-sm relative z-10 group-hover:bg-pink-500 group-hover:text-white transition-colors">
+                <MessageCircleHeart size={28} />
+              </div>
+              <div className="relative z-10">
+                <h2 className="text-lg font-bold text-pink-900 mb-0.5">Góc Nhắn Gửi</h2>
+                <p className="text-[10px] text-pink-700/70 font-medium">Trò chuyện yêu thương</p>
+              </div>
+            </Link>
+          </div>
+
+          {/* Map Card - Full Width */}
+          <Link href="/map" className="group relative overflow-hidden rounded-3xl bg-white/60 backdrop-blur-md p-5 shadow-lg border border-white transition-all hover:scale-[1.03] hover:shadow-xl hover:bg-white/80 flex items-center gap-5 h-28">
+            <div className="absolute -right-8 -bottom-8 text-teal-100 opacity-50 group-hover:opacity-100 transition-opacity">
+              <MapPin size={100} />
             </div>
-            <div className="h-16 w-16 bg-pink-100 text-pink-600 rounded-full flex items-center justify-center shadow-sm relative z-10 group-hover:bg-pink-500 group-hover:text-white transition-colors">
-              <MessageCircleHeart size={32} />
+            <div className="h-14 w-14 bg-teal-100 text-teal-600 rounded-full flex items-center justify-center shadow-sm relative z-10 group-hover:bg-teal-500 group-hover:text-white transition-colors flex-shrink-0">
+              <MapPin size={28} />
             </div>
             <div className="relative z-10">
-              <h2 className="text-xl font-bold text-pink-900 mb-1">Góc Nhắn Gửi</h2>
-              <p className="text-xs text-pink-700/70 font-medium">Trò chuyện và chia sẻ yêu thương</p>
+              <h2 className="text-lg font-bold text-teal-900 mb-0.5">Bạn Ở Đâu?</h2>
+              <p className="text-[10px] text-teal-700/70 font-medium">Chia sẻ vị trí thời gian thực với người ấy</p>
             </div>
           </Link>
         </div>
