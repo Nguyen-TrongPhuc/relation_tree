@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { getMessages, sendMessage, updateChatBackground, updateMessageContent } from '@/app/actions/chat';
-import { Send, ArrowLeft, Phone, Video, Info, UserPen, Palette, Search, Image as ImageIcon, X, Paperclip, Loader2, Check, CheckCheck } from 'lucide-react';
+import { getMessages, sendMessage, updateChatBackground, updateMessageContent, deleteMessage, togglePinMessage } from '@/app/actions/chat';
+import { Send, ArrowLeft, Phone, Video, Info, UserPen, Palette, Search, Image as ImageIcon, X, Paperclip, Loader2, Check, CheckCheck, Trash, Pin, Reply, MoreVertical } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
@@ -93,6 +93,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
   // Attachment state
   const [attachment, setAttachment] = useState<File | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [contextMenuFor, setContextMenuFor] = useState<string | null>(null);
+  const [replyingTo, setReplyingTo] = useState<any | null>(null);
   const attachInputRef = useRef<HTMLInputElement>(null);
 
   const [livePartnerProfile, setLivePartnerProfile] = useState(partnerProfile);
@@ -501,6 +503,28 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             } : {})
           }}
         >
+          {messages.filter(m => m.is_pinned).length > 0 && (
+            <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-pink-100/50 -mx-4 -mt-4 px-4 py-2 mb-4">
+              <div className="flex items-start gap-2">
+                <Pin size={14} className="text-pink-500 mt-1 flex-shrink-0" />
+                <div className="flex-1 overflow-x-auto flex gap-3 no-scrollbar pb-1">
+                  {messages.filter(m => m.is_pinned).map(pinned => (
+                    <div 
+                      key={pinned.id} 
+                      onClick={() => {
+                        const el = document.getElementById(`msg-${pinned.id}`);
+                        if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }}
+                      className="bg-pink-50 rounded-lg p-2 min-w-[200px] max-w-[250px] cursor-pointer hover:bg-pink-100 transition-colors flex-shrink-0 border border-pink-100/50"
+                    >
+                      <p className="text-[10px] font-bold text-pink-600 truncate">{pinned.sender_id === user.id ? 'Bạn' : (livePartnerProfile?.display_name || 'Người ấy')}</p>
+                      <p className="text-xs text-gray-700 truncate">{pinned.content || 'Hình ảnh'}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
           <div className="relative z-10 space-y-4">
           {loading ? (
             <div className="flex h-full items-center justify-center text-sm text-pink-600">
@@ -666,7 +690,25 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
 
                           <div className={`mt-1 flex items-center gap-1 text-[9.5px] ${isMe ? 'text-pink-100' : 'text-teal-900/50'}`}>
                             <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                            {msg.is_pinned && <Pin size={10} className="text-yellow-500" />}
                           </div>
+                          
+                          {/* Context Menu */}
+                          {contextMenuFor === msg.id && (
+                            <div className={`absolute top-full mt-1 ${isMe ? 'right-0' : 'left-0'} z-50 w-36 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95`}>
+                              <button onClick={(e) => { e.stopPropagation(); handleMessageAction('reply', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50">
+                                <Reply size={16} /> Trả lời
+                              </button>
+                              <button onClick={(e) => { e.stopPropagation(); handleMessageAction('pin', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50">
+                                <Pin size={16} /> {msg.is_pinned ? 'Bỏ ghim' : 'Ghim'}
+                              </button>
+                              {isMe && (
+                                <button onClick={(e) => { e.stopPropagation(); handleMessageAction('delete', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                  <Trash size={16} /> Xóa
+                                </button>
+                              )}
+                            </div>
+                          )}
                         </div>
 
                         {/* Message Status */}
@@ -699,6 +741,19 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           </div>
         )}
 
+        {/* Reply Preview */}
+        {replyingTo && (
+          <div className="px-4 py-2 bg-pink-50 border-t border-pink-100 flex items-center justify-between z-20">
+            <div className="flex flex-col max-w-[80%]">
+              <span className="text-xs font-bold text-pink-600">Đang trả lời {replyingTo.sender_id === user.id ? 'chính bạn' : (livePartnerProfile?.display_name || 'người ấy')}</span>
+              <span className="text-xs text-gray-600 truncate">{replyingTo.content || 'Hình ảnh / Tệp'}</span>
+            </div>
+            <button onClick={() => setReplyingTo(null)} className="p-1 text-gray-400 hover:text-pink-600 rounded-full hover:bg-white transition-colors">
+              <X size={16} />
+            </button>
+          </div>
+        )}
+
         {/* Input Form */}
         <form onSubmit={handleSend} className="flex items-center gap-2 border-t border-pink-100 bg-white p-3 shadow-[0_-4px_10px_rgba(0,0,0,0.02)] z-20">
           <input type="file" accept="image/*" className="hidden" ref={attachInputRef} onChange={handleAttachChange} />
@@ -711,6 +766,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           </button>
           
           <input
+            id="chat-input"
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}

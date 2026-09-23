@@ -36,7 +36,7 @@ export async function updateChatBackground(bgUrl: string) {
   return { success: true };
 }
 
-export async function sendMessage(content: string, imageUrl?: string) {
+export async function sendMessage(content: string, imageUrl?: string, replyToId?: string) {
   if ((!content || !content.trim()) && !imageUrl) return { error: 'Message cannot be empty' };
 
   const supabase = await createClient();
@@ -125,3 +125,34 @@ export async function updateMessageContent(messageId: number, newContent: string
   if (error) return { error: error.message };
   return { success: true };
 }
+
+
+
+export async function deleteMessage(messageId: string) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+
+  const { error } = await supabase
+    .from('messages')
+    .delete()
+    .eq('id', messageId)
+    .eq('sender_id', user.id); // Only allow deleting own messages
+
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+export async function togglePinMessage(messageId: string, currentPinStatus: boolean) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not authenticated' };
+  const partnerId = await getPartnerId(supabase, user.id);
+  if (!partnerId) return { error: 'Chưa ghép đôi' };
+  const { error } = await supabase.from('messages').update({ is_pinned: !currentPinStatus }).eq('id', messageId).or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`);
+  if (error) return { error: error.message };
+  return { success: true };
+}
+
+
+
