@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { TreeDeciduous, MessageCircleHeart, Settings, MapPin } from 'lucide-react';
 import CoupleBadge from '@/components/home/CoupleBadge';
+import LocketWidget from '@/components/home/LocketWidget';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
@@ -58,6 +59,11 @@ export default function DashboardPage() {
         <div className="flex flex-col items-center space-y-4">
           <CoupleBadge initialUser={userProfile} initialPartner={partnerProfile} />
           <p className="text-pink-900/60 text-sm font-medium">Không gian dành riêng cho hai người</p>
+        </div>
+
+        {/* Locket Widget */}
+        <div className="flex justify-center w-full my-4">
+          <LocketWidget userProfile={userProfile} partnerProfile={partnerProfile} />
         </div>
 
         {/* Action Cards */}

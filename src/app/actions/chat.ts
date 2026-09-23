@@ -82,6 +82,10 @@ export async function getMessages() {
       sender_id,
       receiver_id,
       image_url,
+      is_moment,
+      reactions,
+      reply_to_id,
+      replied_message:reply_to_id (id, content, image_url, sender_id),
       profiles:sender_id (display_name, avatar_url)
     `)
     .in('sender_id', [user.id, partnerId])

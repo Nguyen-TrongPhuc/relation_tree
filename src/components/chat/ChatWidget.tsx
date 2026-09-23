@@ -135,7 +135,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           } else {
             profile = { display_name: partnerProfile?.display_name || 'Người ấy', avatar_url: partnerProfile?.avatar_url || null };
           }
-          newMsg.profiles = profile;
+          newMsg.profiles = profile; if (newMsg.reply_to_id) { const { data: replied } = await supabase.from('messages').select('id, content, image_url, sender_id').eq('id', newMsg.reply_to_id).single(); newMsg.replied_message = replied; }
 
           setMessages(prev => {
             // Xóa tin nhắn ảo (optimistic) có cùng nội dung (id âm)
@@ -159,7 +159,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         { event: 'UPDATE', schema: 'public', table: 'messages' },
         async (payload) => {
           const updatedMsg = payload.new as any;
-          setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, content: updatedMsg.content } : m));
+          setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
         }
       )
       .subscribe();
@@ -559,9 +559,26 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                             ? 'bg-pink-600 text-white rounded-tr-sm rounded-l-2xl rounded-br-2xl items-end' 
                             : 'bg-teal-50 text-teal-900 border border-teal-100 rounded-tl-sm rounded-r-2xl rounded-bl-2xl items-start'
                         }`}>
-                          {msg.image_url && (
-                            <img src={msg.image_url} alt="attachment" className="rounded-xl mb-2 max-w-full h-auto max-h-64 object-contain bg-black/5" />
-                          )}
+                                                      {msg.replied_message && (
+                              <div className="w-full mb-2 bg-black/10 rounded-xl p-2 border-l-4 border-white/50 text-sm">
+                                <span className="font-bold opacity-80 text-xs mb-1 block">
+                                  {msg.replied_message.sender_id === currentUserId ? 'B?n' : 'Ng�?i ?y'}
+                                </span>
+                                {msg.replied_message.image_url && (
+                                  <img src={msg.replied_message.image_url} className="w-full max-w-[120px] rounded-lg mb-1 object-cover" />
+                                )}
+                                <p className="opacity-90 line-clamp-2">{msg.replied_message.content}</p>
+                              </div>
+                            )}
+
+                            {msg.image_url && (
+                              <div className="relative">
+                                <img src={msg.image_url} alt="attachment" className="rounded-xl mb-2 max-w-full h-auto max-h-64 object-contain bg-black/5" />
+                                {msg.is_moment && (
+                                  <div className="absolute top-2 left-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md backdrop-blur-md">Kho?nh kh?c (Locket)</div>
+                                )}
+                              </div>
+                            )}
                           
                           {/* Check if this is a Call Invite */}
                           {msg.content?.startsWith('CALL::') ? (() => {
@@ -635,8 +652,17 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                               </div>
                             );
                           })() : (
-                            msg.content && <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                                                        msg.content && <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{msg.content}</p>
                           )}
+                          
+                          {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                            <div className="absolute -bottom-3 -right-2 flex -space-x-1 z-10">
+                              {Object.entries(msg.reactions).map(([uid, emoji]) => (
+                                <div key={uid} className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-md border border-gray-100 text-xs text-black">
+                                  {emoji as string}
+                                </div>
+                              ))}
+                            </div>
 
                           <div className={`mt-1 flex items-center gap-1 text-[9.5px] ${isMe ? 'text-pink-100' : 'text-teal-900/50'}`}>
                             <span>{new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
@@ -759,3 +785,6 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     </>
   );
 }
+
+
+
