@@ -30,8 +30,8 @@ export default function LoginPage() {
       setError(authError.message);
       setLoading(false);
     } else {
-      // Thành công, chuyển hướng
-      router.push('/');
+      // Thành công, tải lại trang để AuthProvider nhận session từ localStorage
+      window.location.href = '/';
     }
   };
 

@@ -47,7 +47,7 @@ export default function SetupPage() {
       setFriendships(fData || []);
       
       if (fData?.find(f => f.status === 'accepted')) {
-        router.push('/');
+        window.location.href = '/';
       }
     }
     setLoading(false);
@@ -126,7 +126,7 @@ export default function SetupPage() {
     setError(null);
     setLoading(true);
     await supabase.from('friendships').update({ status: 'accepted' }).eq('id', requestId);
-    router.push('/');
+    window.location.href = '/';
   };
 
   const handleCancelRequest = async (requestId: string) => {
@@ -138,7 +138,7 @@ export default function SetupPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    router.push('/login');
+    window.location.href = '/login';
   };
 
   if (authLoading || loading) {
