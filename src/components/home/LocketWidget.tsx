@@ -145,7 +145,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         onChange={handleFileSelect} 
       />
 
-      <div className="relative w-full aspect-square max-w-[320px] bg-gray-100 rounded-[2rem] shadow-xl border-4 border-white group overflow-hidden">
+      <div className="relative w-full aspect-square max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
         {loading ? (
           <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-pink-300" />
@@ -163,7 +163,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
                 
                 {/* Header info */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-center drop-shadow-md z-10 pointer-events-none">
-                  <div className="flex items-center gap-2 bg-black/30 backdrop-blur-md px-3 py-1.5 rounded-full">
+                  <div className="flex items-center gap-2 bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10 shadow-lg">
                     <img 
                       src={moment.sender_id === userProfile.id ? userProfile.avatar_url : partnerProfile.avatar_url} 
                       className="w-5 h-5 rounded-full object-cover" 
@@ -172,7 +172,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
                       {moment.sender_id === userProfile.id ? 'Bạn' : partnerProfile.display_name}
                     </span>
                   </div>
-                  <span className="text-white text-[10px] bg-black/30 backdrop-blur-md px-2 py-1 rounded-full">
+                  <span className="text-white text-[10px] bg-black/40 backdrop-blur-xl px-3 py-1.5 rounded-full border border-white/10 shadow-lg font-bold tracking-wide">
                     {new Date(moment.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </span>
                 </div>
@@ -212,12 +212,12 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         ) : (
           <button 
             onClick={() => fileInputRef.current?.click()}
-            className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-pink-50 to-teal-50 gap-4"
+            className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 gap-4"
           >
             <div className="w-20 h-20 rounded-full bg-white shadow-md flex items-center justify-center border border-pink-100">
               <Camera className="text-pink-400" size={40} />
             </div>
-            <p className="text-pink-600 font-medium text-sm">Chạm để gửi khoảnh khắc</p>
+            <p className="text-white/80 font-medium text-sm drop-shadow-md">Chạm để gửi khoảnh khắc</p>
           </button>
         )}
 

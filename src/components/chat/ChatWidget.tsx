@@ -20,12 +20,12 @@ function formatLastActive(dateStr?: string) {
   if (!dateStr) return 'Đang vắng mặt âª';
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const diffMins = Math.floor(diffMs / 60000);
-  if (diffMins < 1) return 'Vừa má»›i truy cập';
-  if (diffMins < 60) return `Vắng mặt ${diffMins} phĂºt`;
+  if (diffMins < 1) return 'Vừa mới truy cập';
+  if (diffMins < 60) return `Vắng mặt ${diffMins} phút`;
   const diffHours = Math.floor(diffMins / 60);
   if (diffHours < 24) return `Vắng mặt ${diffHours} giờ`;
   const diffDays = Math.floor(diffHours / 24);
-  return `Vắng mặt ${diffDays} ngĂ y`;
+  return `Vắng mặt ${diffDays} ngày`;
 }
 
 function MessageStatus({ msg, isPartnerOnline, partnerLastActive }: { msg: any, isPartnerOnline: boolean, partnerLastActive: string | undefined }) {
@@ -130,7 +130,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         async (payload) => {
           const newMsg = payload.new as any;
           
-          // Gắn profile cục bá»™ thay vĂ¬ gọi getMessages() (bỏ qua Server Action)
+          // Gắn profile cục bộ thay vì gọi getMessages() (bỏ qua Server Action)
           let profile = null;
           if (newMsg.sender_id === currentUserId) {
             profile = { display_name: 'Bạn', avatar_url: null };
@@ -215,7 +215,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       .upload(fileName, file, { upsert: true });
 
     if (uploadError) {
-      alert('Lá»—i tải hĂ¬nh nền: ' + uploadError.message);
+      alert('Lỗi tải hình nền: ' + uploadError.message);
       setIsUploadingBg(false);
       return;
     }
@@ -235,7 +235,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
   };
 
   const startCall = async (mode: 'audio' | 'video') => {
-    // ZegoCloud chá»‰ cho phĂ©p chữ, sá»‘, gạch dÆ°á»›i trong Room ID - phải xĂ³a dấu gạch ngang của UUID
+    // ZegoCloud chỉ cho phép chữ, số, gạch dưới trong Room ID - phải xóa dấu gạch ngang của UUID
     const safeUserId = currentUserId!.replace(/-/g, '');
     const roomId = `${safeUserId}_${Date.now()}`;
     const textMsg = `CALL::${roomId}::RINGING::${mode}`;
@@ -249,7 +249,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     if (!error && insertedMsg) {
       const res = { message: insertedMsg };
       setCallMode(mode);
-      setCallState('ringing'); // Chá»‰ Ä‘á»• chuĂ´ng, CHƯA má»Ÿ ZegoCloud
+      setCallState('ringing'); // Chỉ đổ chuông, CHƯA mở ZegoCloud
       setActiveCallId(res.message.id);
       setActiveRoomId(roomId);
     }
@@ -269,7 +269,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     await supabase.from('messages').update({ content: `CALL::${roomId}::REJECTED::${mode}` }).eq('id', msgId);
   };
 
-  // Lắng nghe thay Ä‘á»•i tin nhắn Ä‘á»ƒ Ä‘á»“ng bá»™ trạng thĂ¡i cuá»™c gọi
+  // Lắng nghe thay đổi tin nhắn để đồng bộ trạng thái cuộc gọi
   useEffect(() => {
     if (activeCallId) {
       const currentMsg = messages.find(m => m.id === activeCallId);
@@ -292,7 +292,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       }
     }
 
-    // Tự Ä‘á»™ng tắt popup cuộc gọi đến nếu tin nhắn khĂ´ng cĂ²n lĂ  RINGING (đã Hủy/Từ chối/Bắt máy)
+    // Tự động tắt popup cuộc gọi đến nếu tin nhắn không còn là RINGING (đã Hủy/Từ chối/Bắt máy)
     if (incomingCall) {
       const incMsg = messages.find(m => m.id === incomingCall.msgId);
       if (incMsg && !incMsg.content.includes('::RINGING::')) {
@@ -322,7 +322,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     setInputValue('');
     let uploadedImageUrl = '';
     
-    // 1. Optimistic UI: HiỒn thá»‹ ngay lập tức trĂªn mĂ n hĂ¬nh
+    // 1. Optimistic UI: Hiển thị ngay lập tức trên màn hình
     const tempId = -Date.now();
     if (!attachment) {
       const tempMsg = {
@@ -359,7 +359,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     });
     
     if (error) {
-      alert('Lá»—i gửi tin nhắn: ' + error.message);
+      alert('Lỗi gửi tin nhắn: ' + error.message);
       setMessages(prev => prev.filter(m => m.id !== tempId)); // Xóa tin nhắn ảo nếu lỗi
     }
     setIsSending(false);
@@ -379,18 +379,18 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             {callMode === 'video' ? <Video size={40} /> : <Phone size={40} />}
           </div>
           <h2 className="text-2xl font-bold mb-2">{livePartnerProfile?.display_name || 'Người ấy'}</h2>
-          <p className="text-pink-200 text-lg mb-12 animate-pulse">Đang Ä‘á»• chuĂ´ng...</p>
+          <p className="text-pink-200 text-lg mb-12 animate-pulse">Đang đổ chuông...</p>
           <button 
             onClick={handleLeaveCall}
             className="w-16 h-16 rounded-full bg-red-500 flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors active:scale-95"
           >
             <Phone size={28} className="rotate-[135deg]" />
           </button>
-          <p className="text-pink-300 text-sm mt-3">Hủy cuá»™c gọi</p>
+          <p className="text-pink-300 text-sm mt-3">Hủy cuộc gọi</p>
         </div>
       )}
 
-      {/* đŸ“ POPUP CUá»˜C Gá»ŒI ĐẾN (hiá»‡n khi có người gọi) */}
+      {/* đŸ“ POPUP CUỘC GỌI ĐẾN (hiện khi có người gọi) */}
       {incomingCall && !callState && (
         <div className="fixed inset-0 z-[999] bg-gradient-to-b from-pink-700 to-pink-950 flex flex-col items-center justify-center text-white">
           <img 
@@ -400,10 +400,10 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           />
           <h2 className="text-2xl font-bold mb-2">{livePartnerProfile?.display_name || 'Người ấy'}</h2>
           <p className="text-pink-200 text-lg mb-12 animate-pulse">
-            Cuá»™c gọi {incomingCall.mode === 'video' ? 'Video' : 'Thoại'} Ä‘áº¿n...
+            Cuộc gọi {incomingCall.mode === 'video' ? 'Video' : 'Thoại'} đến...
           </p>
           <div className="flex gap-12">
-            {/* NĂºt Từ chối */}
+            {/* Nút Từ chối */}
             <div className="flex flex-col items-center">
               <button 
                 onClick={() => handleRejectCall(incomingCall.msgId, incomingCall.roomId, incomingCall.mode)}
@@ -413,7 +413,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
               </button>
               <p className="text-red-300 text-xs mt-2">Từ chối</p>
             </div>
-            {/* NĂºt Nghe máy */}
+            {/* Nút Nghe máy */}
             <div className="flex flex-col items-center">
               <button 
                 onClick={() => handleJoinCall(incomingCall.msgId, incomingCall.roomId, incomingCall.mode)}
@@ -426,7 +426,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           </div>
         </div>
       )}
-      {/* Màn hình ZegoCloud (chá»‰ má»Ÿ khi ĐÃ bắt máy) */}
+      {/* Màn hình ZegoCloud (chỉ mở khi ĐÃ bắt máy) */}
       {callState === 'connected' && callMode && currentUserId && activeRoomId && (
         <CallScreen 
           roomName={activeRoomId}
@@ -456,7 +456,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                 <div>
                   <h3 className="font-bold text-gray-800">{livePartnerProfile?.display_name || 'Người ấy'}</h3>
                   <p className={`text-[11px] font-medium ${isPartnerOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                    {isPartnerOnline ? 'Đang trực tuyến đŸŸ¢' : formatLastActive(livePartnerProfile?.last_active)}
+                    {isPartnerOnline ? 'Đang trực tuyến 🟢' : formatLastActive(livePartnerProfile?.last_active)}
                   </p>
                 </div>
             </div>
@@ -479,7 +479,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                   type="text" 
                   value={searchQuery}
                   onChange={e => setSearchQuery(e.target.value)}
-                  placeholder="TĂ¬m kiếm trong Ä‘oạn chat..." 
+                  placeholder="Tìm kiếm trong đoạn chat..." 
                   className="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-pink-400"
                 />
               </div>
@@ -532,8 +532,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             </div>
           ) : displayedMessages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-sm text-pink-600/70 py-20 bg-white/50 backdrop-blur-sm rounded-2xl">
-              <p>{isSearching ? 'KhĂ´ng tĂ¬m thấy kết quả nĂ o.' : 'Chưa có tin nhắn nĂ o.'}</p>
-              {!isSearching && <p className="mt-1">HĂ£y gửi lời chĂ o Ä‘áº¿n người ấy nhĂ©! đŸ’•</p>}
+              <p>{isSearching ? 'Không tìm thấy kết quả nào.' : 'Chưa có tin nhắn nào.'}</p>
+              {!isSearching && <p className="mt-1">Hãy gửi lời chào đến người ấy nhé! 💕</p>}
             </div>
           ) : ( (() => {
               let lastDateStr = '';
@@ -549,9 +549,9 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                   
                   let displayDate = dateStr;
                   if (dateStr === today.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })) {
-                    displayDate = 'HĂ´m nay';
+                    displayDate = 'Hôm nay';
                   } else if (dateStr === yesterday.toLocaleDateString('vi-VN', { day: '2-digit', month: '2-digit', year: 'numeric' })) {
-                    displayDate = 'HĂ´m qua';
+                    displayDate = 'Hôm qua';
                   }
                   
                   dateHeader = (
@@ -619,19 +619,19 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                             let textColor = isMe ? 'text-white' : 'text-teal-900';
                           
                             if (displayStatus === 'RINGING') {
-                               statusText = isMe ? 'Đang gọi...' : `Cuá»™c gọi ${mode === 'video' ? 'Video' : 'Thoại'} Ä‘áº¿n`;
+                               statusText = isMe ? 'Đang gọi...' : `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đến`;
                             } else if (displayStatus === 'ACCEPTED') {
-                               statusText = `Cuá»™c gọi ${mode === 'video' ? 'Video' : 'Thoại'} Ä‘ang diá»…n ra`;
+                               statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đang diễn ra`;
                             } else if (displayStatus === 'ENDED') {
-                               statusText = `Cuá»™c gọi ${mode === 'video' ? 'Video' : 'Thoại'} đã kết thĂºc`;
+                               statusText = `Cuộc gọi ${mode === 'video' ? 'Video' : 'Thoại'} đã kết thúc`;
                                bgColor = isMe ? 'bg-pink-700/50' : 'bg-gray-100';
                                textColor = isMe ? 'text-pink-50' : 'text-gray-500';
                             } else if (displayStatus === 'MISSED') {
-                               statusText = isMe ? 'Cuá»™c gọi nhỡ' : 'Bạn đã lỡ má»™t cuá»™c gọi';
+                               statusText = isMe ? 'Cuộc gọi nhỡ' : 'Bạn đã lỡ một cuộc gọi';
                                bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
                                textColor = isMe ? 'text-white' : 'text-red-500';
                             } else if (displayStatus === 'REJECTED') {
-                               statusText = isMe ? 'Người ấy đã từ chối' : 'Bạn đã từ chối cuá»™c gọi';
+                               statusText = isMe ? 'Người ấy đã từ chối' : 'Bạn đã từ chối cuộc gọi';
                                bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
                                textColor = isMe ? 'text-white' : 'text-red-500';
                             }
@@ -669,7 +669,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                                        if (activeCallId === msg.id) {
                                          setCallMode(null); setActiveCallId(null); setActiveRoomId(null);
                                        }
-                                     }} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Hủy cuá»™c gọi</button>
+                                     }} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Hủy cuộc gọi</button>
                                    </div>
                                  )}
                               </div>
@@ -811,7 +811,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
               <div className="flex items-center gap-3">
                 <UserPen size={18} className="text-pink-600" />
-                <span className="font-medium text-sm">Äá»•i biá»‡t danh</span>
+                <span className="font-medium text-sm">Äá»•i biệt danh</span>
               </div>
             </button>
 
@@ -819,7 +819,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             <button onClick={() => bgInputRef.current?.click()} disabled={isUploadingBg} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group disabled:opacity-50">
               <div className="flex items-center gap-3">
                 {isUploadingBg ? <Loader2 size={18} className="text-pink-500 animate-spin" /> : <Palette size={18} className="text-pink-500" />}
-                <span className="font-medium text-sm">{isUploadingBg ? 'Đang tải...' : 'Äá»•i hĂ¬nh nền chat'}</span>
+                <span className="font-medium text-sm">{isUploadingBg ? 'Đang tải...' : 'Äá»•i hình nền chat'}</span>
               </div>
             </button>
 

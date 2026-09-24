@@ -5,7 +5,8 @@ import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
-import { ArrowLeft, Clock, Grid, Loader2, Smile, Send, Heart, Download, Trash, MoreHorizontal } from 'lucide-react';
+import { ArrowLeft, Clock, Grid, Loader2, Smile, Send, Heart, Download, Trash, MoreHorizontal, Camera } from 'lucide-react';
+import PreviewModal from '@/components/locket/PreviewModal';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
 
@@ -16,6 +17,9 @@ export default function LocketPage() {
   const initialTab = searchParams.get('tab') === 'gallery' ? 'gallery' : 'timeline';
   
   const [tab, setTab] = useState<'timeline' | 'gallery'>(initialTab);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [moments, setMoments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -62,7 +66,31 @@ export default function LocketPage() {
     return () => { supabase.removeChannel(channel); };
   }, [userProfile, partnerProfile]);
 
-  const fetchMoments = async (isInitial = false) => {
+  
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setPhotoFile(file);
+      setIsPreviewOpen(true);
+    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const handleSendMoment = async (imageUrl: string, caption: string) => {
+    await supabase.from('messages').insert({
+      sender_id: userProfile.id,
+      receiver_id: partnerProfile.id,
+      content: caption || '📸 Vừa chia sẻ một khoảnh khắc',
+      image_url: imageUrl,
+      is_moment: true,
+      reactions: {}
+    });
+    setMoments([]); // clear to refetch
+    setPage(0);
+    setHasMore(true);
+    fetchMoments(true);
+  };
+const fetchMoments = async (isInitial = false) => {
     if (!userProfile || !partnerProfile) return;
     if (isInitial) {
       setLoading(true);
