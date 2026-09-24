@@ -140,14 +140,14 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           newMsg.profiles = profile; if (newMsg.reply_to_id) { const { data: replied } = await supabase.from('messages').select('id, content, image_url, sender_id').eq('id', newMsg.reply_to_id).single(); newMsg.replied_message = replied; }
 
           setMessages(prev => {
-            // XĂ³a tin nhắn ảo (optimistic) cĂ³ cĂ¹ng ná»™i dung (id Ă¢m)
+            // Xóa tin nhắn ảo (optimistic) có cùng nội dung (id âm)
             const filtered = prev.filter(m => !(m.id < 0 && m.content === newMsg.content));
             if (filtered.some(m => m.id === newMsg.id)) return filtered;
             return [...filtered, newMsg];
           });
           setTimeout(scrollToBottom, 100);
 
-          // PhĂ¡t hiá»‡n cuá»™c gọi Ä‘áº¿n: tin nhắn CALL::RINGING từ người khĂ¡c
+          // Phát hiện cuộc gọi đến: tin nhắn CALL::RINGING từ người khác
           if (newMsg.content?.startsWith('CALL::') && newMsg.content.includes('::RINGING::') && newMsg.sender_id !== currentUserId) {
             const parts = newMsg.content.split('::');
             const roomId = parts[1];
@@ -260,7 +260,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     setCallState('connected');
     setActiveCallId(msgId);
     setActiveRoomId(roomId);
-    setIncomingCall(null); // Tắt popup cuá»™c gọi Ä‘áº¿n
+    setIncomingCall(null); // Tắt popup cuộc gọi đến
     await supabase.from('messages').update({ content: `CALL::${roomId}::ACCEPTED::${mode}` }).eq('id', msgId);
   };
 
@@ -292,7 +292,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       }
     }
 
-    // Tự Ä‘á»™ng tắt popup cuá»™c gọi Ä‘áº¿n nếu tin nhắn khĂ´ng cĂ²n lĂ  RINGING (đã Hủy/Từ chối/Bắt máy)
+    // Tự Ä‘á»™ng tắt popup cuộc gọi đến nếu tin nhắn khĂ´ng cĂ²n lĂ  RINGING (đã Hủy/Từ chối/Bắt máy)
     if (incomingCall) {
       const incMsg = messages.find(m => m.id === incomingCall.msgId);
       if (incMsg && !incMsg.content.includes('::RINGING::')) {
@@ -360,7 +360,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     
     if (error) {
       alert('Lá»—i gửi tin nhắn: ' + error.message);
-      setMessages(prev => prev.filter(m => m.id !== tempId)); // XĂ³a tin nhắn ảo nếu lá»—i
+      setMessages(prev => prev.filter(m => m.id !== tempId)); // Xóa tin nhắn ảo nếu lỗi
     }
     setIsSending(false);
     scrollToBottom();
@@ -372,7 +372,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
 
   return (
     <>
-      {/* MĂ n hĂ¬nh chờ Ä‘á»• chuĂ´ng (người gọi Ä‘ang Ä‘á»£i người kia bắt máy) */}
+      {/* Màn hình chờ đổ chuông (người gọi đang đợi người kia bắt máy) */}
       {callState === 'ringing' && (
         <div className="fixed inset-0 z-[1000] bg-gradient-to-b from-pink-800 to-pink-950 flex flex-col items-center justify-center text-white">
           <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-6 animate-pulse">
@@ -390,7 +390,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         </div>
       )}
 
-      {/* đŸ“ POPUP CUá»˜C Gá»ŒI ĐẾN (hiá»‡n khi cĂ³ người gọi) */}
+      {/* đŸ“ POPUP CUá»˜C Gá»ŒI ĐẾN (hiá»‡n khi có người gọi) */}
       {incomingCall && !callState && (
         <div className="fixed inset-0 z-[999] bg-gradient-to-b from-pink-700 to-pink-950 flex flex-col items-center justify-center text-white">
           <img 
@@ -426,7 +426,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           </div>
         </div>
       )}
-      {/* MĂ n hĂ¬nh ZegoCloud (chá»‰ má»Ÿ khi ÄĂƒ bắt máy) */}
+      {/* Màn hình ZegoCloud (chá»‰ má»Ÿ khi ĐÃ bắt máy) */}
       {callState === 'connected' && callMode && currentUserId && activeRoomId && (
         <CallScreen 
           roomName={activeRoomId}
@@ -532,7 +532,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             </div>
           ) : displayedMessages.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center text-sm text-pink-600/70 py-20 bg-white/50 backdrop-blur-sm rounded-2xl">
-              <p>{isSearching ? 'KhĂ´ng tĂ¬m thấy kết quả nĂ o.' : 'Chưa cĂ³ tin nhắn nĂ o.'}</p>
+              <p>{isSearching ? 'KhĂ´ng tĂ¬m thấy kết quả nĂ o.' : 'Chưa có tin nhắn nĂ o.'}</p>
               {!isSearching && <p className="mt-1">HĂ£y gửi lời chĂ o Ä‘áº¿n người ấy nhĂ©! đŸ’•</p>}
             </div>
           ) : ( (() => {
@@ -631,7 +631,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                                bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
                                textColor = isMe ? 'text-white' : 'text-red-500';
                             } else if (displayStatus === 'REJECTED') {
-                               statusText = isMe ? 'Người ấy đã từ chá»‘i' : 'Bạn đã từ chá»‘i cuá»™c gọi';
+                               statusText = isMe ? 'Người ấy đã từ chối' : 'Bạn đã từ chối cuá»™c gọi';
                                bgColor = isMe ? 'bg-red-500/20' : 'bg-red-50';
                                textColor = isMe ? 'text-white' : 'text-red-500';
                             }
@@ -770,7 +770,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
-            placeholder="Nhắn gĂ¬ Ä‘i..."
+            placeholder="Nhắn gì đi..."
             className="flex-1 rounded-full border border-gray-200 bg-gray-50 px-4 py-2 text-sm text-gray-700 focus:border-pink-400 focus:outline-none focus:ring-1 focus:ring-pink-400 transition-colors"
           />
           <button 
@@ -785,7 +785,12 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
 
       {/* RIGHT SIDEBAR (INFO PANEL) */}
       {isInfoOpen && (
-        <div className="w-80 border-l border-pink-100 bg-white flex flex-col flex-shrink-0 z-20 shadow-[-4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto">
+        <>
+        <div className="md:hidden absolute inset-0 bg-black/20 z-20" onClick={() => setIsInfoOpen(false)}></div>
+        <div className="absolute inset-y-0 right-0 w-80 md:relative md:w-80 border-l border-pink-100 bg-white flex flex-col flex-shrink-0 z-30 shadow-2xl md:shadow-[-4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto transform transition-transform duration-300">
+          <button onClick={() => setIsInfoOpen(false)} className="md:hidden absolute top-4 right-4 p-2 bg-pink-50 text-pink-500 rounded-full z-40 hover:bg-pink-100">
+            <X size={20} />
+          </button>
           <div className="flex flex-col items-center py-8 px-4 border-b border-gray-50">
             <div className="relative">
               <img 
@@ -835,6 +840,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             </button>
           </div>
         </div>
+        </>
       )}
     </div>
     </>
