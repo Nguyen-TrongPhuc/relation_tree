@@ -5,9 +5,17 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { useAuth } from '@/components/providers/AuthProvider';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { user } = useAuth();
+
+  require('react').useEffect(() => {
+    if (user) {
+      router.push('/setup');
+    }
+  }, [user, router]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
@@ -30,7 +38,7 @@ export default function RegisterPage() {
       setError(authError.message);
       setLoading(false);
     } else {
-      window.location.href = '/setup';
+      // Redirect handled by useEffect
     }
   };
 
