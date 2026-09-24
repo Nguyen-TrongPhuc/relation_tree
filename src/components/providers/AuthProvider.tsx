@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url')
+        .select('id, display_name, avatar_url, last_active')
         .in('id', [userId, partnerId]);
 
       setUserProfile(profiles?.find(p => p.id === userId) || { id: userId, display_name: 'Bạn', avatar_url: null });
