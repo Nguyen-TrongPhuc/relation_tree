@@ -30,7 +30,7 @@ export default function RegisterPage() {
       setError(authError.message);
       setLoading(false);
     } else {
-      window.location.href = '/setup';
+      router.push('/setup');
     }
   };
 

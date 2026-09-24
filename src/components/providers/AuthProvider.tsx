@@ -65,6 +65,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        if (event === 'INITIAL_SESSION') return;
+
         if (session?.user) {
           setUser(session.user);
           await loadPairData(session.user.id);
@@ -203,6 +205,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [myLocation, user]);
 
   const loadPairData = async (userId: string) => {
+    try {
+
     const { data: pairs } = await supabase
       .from('friendships')
       .select('id, sender_id, receiver_id, background_url')
@@ -223,6 +227,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setUserProfile(profiles?.find(p => p.id === userId) || { id: userId, display_name: 'Bạn', avatar_url: null });
       setPartnerProfile(profiles?.find(p => p.id === partnerId) || { id: partnerId, display_name: 'Người ấy', avatar_url: null });
     }
+    } catch (error) {
+      console.error('Error loading pair data:', error);
+    }
+
   };
 
   return (
