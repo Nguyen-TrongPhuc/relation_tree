@@ -122,13 +122,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // 3. Load vị trí cuối cùng đã lưu của người ấy từ DB (phòng trường hợp họ đã tắt app)
     const loadSavedPartnerLocation = async () => {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('profiles')
         .select('last_lat, last_lng, last_location_at')
         .eq('id', partnerProfile.id)
         .single();
       
-      if (data?.last_lat && data?.last_lng) {
+      if (error) { console.error('Missing location columns in DB?', error); } else if (data?.last_lat && data?.last_lng) {
         setPartnerLocation({
           lat: data.last_lat,
           lng: data.last_lng,
@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url, last_active')
+        .select('id, display_name, avatar_url')
         .in('id', [userId, partnerId]);
 
       setUserProfile(profiles?.find(p => p.id === userId) || { id: userId, display_name: 'Bạn', avatar_url: null });
