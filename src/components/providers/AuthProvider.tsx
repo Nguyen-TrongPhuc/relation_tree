@@ -209,7 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     const { data: pairs } = await supabase
       .from('friendships')
-      .select('id, sender_id, receiver_id, background_url')
+      .select('id, sender_id, receiver_id')
       .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
       .eq('status', 'accepted')
       .limit(1);
@@ -221,7 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       const { data: profiles } = await supabase
         .from('profiles')
-        .select('id, display_name, avatar_url, last_active')
+        .select('id, display_name, avatar_url')
         .in('id', [userId, partnerId]);
 
       setUserProfile(profiles?.find(p => p.id === userId) || { id: userId, display_name: 'Bạn', avatar_url: null });
