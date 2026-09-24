@@ -26,12 +26,13 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
   const [caption, setCaption] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const [selectedFilter, setSelectedFilter] = useState(FILTERS[0]);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   const supabase = createClient();
 
-  if (!isOpen || !photoFile) return null;
+  const objectUrl = React.useMemo(() => photoFile ? URL.createObjectURL(photoFile) : "", [photoFile]);
 
-  const objectUrl = React.useMemo(() => URL.createObjectURL(photoFile), [photoFile]);
+  if (!isOpen || !photoFile) return null;
 
   const sendPhoto = async () => {
     setIsUploading(true);
@@ -50,6 +51,10 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
         const ctx = canvas.getContext('2d');
         if (ctx) {
           ctx.filter = selectedFilter.filter;
+          if (isFlipped) {
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+          }
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
           
           finalFile = await new Promise<Blob>((resolve) => {
@@ -85,6 +90,12 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
 
       {/* Filter Options */}
       <div className="absolute top-20 left-0 right-0 px-4 z-20 flex gap-2 overflow-x-auto no-scrollbar py-2">
+        <button 
+          onClick={() => setIsFlipped(!isFlipped)}
+          className="whitespace-nowrap px-4 py-2 mr-2 rounded-full text-sm font-medium backdrop-blur-md transition-all bg-gray-800 text-white border border-gray-600 hover:bg-gray-700"
+        >
+          {isFlipped ? 'Khôi phục' : 'Lật ảnh ↔️'}
+        </button>
         {FILTERS.map(f => (
           <button 
             key={f.name}
@@ -105,7 +116,7 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
           src={objectUrl} 
           alt="Captured" 
           className="w-full h-full object-cover transition-all duration-300"
-          style={{ filter: selectedFilter.filter !== 'none' ? selectedFilter.filter : undefined }} 
+          style={{ filter: selectedFilter.filter !== 'none' ? selectedFilter.filter : undefined, transform: isFlipped ? 'scaleX(-1)' : 'none' }} 
         />
         
         {/* Caption Overlay */}
