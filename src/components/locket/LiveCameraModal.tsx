@@ -17,8 +17,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isFlashOn, setIsFlashOn] = useState(false);
-
+  
   const startCamera = async (mode: 'user' | 'environment') => {
     setIsLoading(true);
     setError(null);
@@ -132,16 +131,14 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
 
   return (
     <div className="relative w-full h-[100dvh] min-h-[100dvh] bg-black flex flex-col items-center justify-start pt-[12vh] z-10">
-      <div className="absolute top-0 left-0 right-0 p-4 safe-area-top flex justify-end items-center z-20 bg-gradient-to-b from-black/50 to-transparent gap-4">
-        <button onClick={toggleFlash} className={`p-2 rounded-full backdrop-blur-md ${isFlashOn ? 'bg-yellow-400 text-black' : 'text-white bg-black/20'}`}>
-          <Zap size={24} />
-        </button>
-        <button onClick={toggleCamera} className="p-2 text-white bg-black/20 rounded-full backdrop-blur-md">
-          <RefreshCcw size={24} />
+      <div className="absolute top-0 left-0 right-0 p-6 safe-area-top flex justify-between items-center z-20 bg-gradient-to-b from-black/60 via-black/20 to-transparent">
+        <div className="text-white font-bold text-lg drop-shadow-md">Locket</div>
+        <button onClick={toggleCamera} className="p-3 text-white bg-white/20 hover:bg-white/30 rounded-full backdrop-blur-xl transition-all active:scale-95 shadow-lg">
+          <RefreshCcw size={22} />
         </button>
       </div>
 
-      <div className="relative w-full max-w-md aspect-square flex items-center justify-center bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="relative w-[90%] max-w-md aspect-[4/5] flex items-center justify-center bg-gray-900 rounded-[2.5rem] overflow-hidden shadow-2xl border-4 border-white/10 ring-4 ring-black/20">
         {isLoading && <Loader2 className="absolute text-white animate-spin z-10" size={40} />}
         {error && <p className="absolute text-red-500 z-10 px-6 text-center">{error}</p>}
         
@@ -156,13 +153,13 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
-      <div className="absolute bottom-20 left-0 right-0 flex justify-center z-20">
+      <div className="absolute bottom-24 left-0 right-0 flex justify-center z-20">
         <button 
           onClick={capturePhoto}
           disabled={!stream || isLoading}
-          className="w-20 h-20 rounded-full border-4 border-white/50 bg-white/20 flex items-center justify-center active:scale-90 transition-transform disabled:opacity-50"
+          className="w-20 h-20 rounded-full border-[5px] border-white/30 bg-transparent flex items-center justify-center active:scale-90 transition-all duration-200 disabled:opacity-50 group hover:border-white/50"
         >
-          <div className="w-16 h-16 rounded-full bg-white shadow-lg"></div>
+          <div className="w-[60px] h-[60px] rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.4)] group-active:scale-95 transition-transform"></div>
         </button>
       </div>
       

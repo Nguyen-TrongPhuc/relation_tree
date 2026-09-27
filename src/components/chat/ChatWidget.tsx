@@ -84,6 +84,15 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
   // Search state
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [showMediaSidebar, setShowMediaSidebar] = useState(false);
+  const [viewingImage, setViewingImage] = useState<string | null>(null);
+  const [localNickname, setLocalNickname] = useState('');
+  useEffect(() => {
+    setLocalNickname(localStorage.getItem('partner_nickname') || '');
+    const handleStorage = () => setLocalNickname(localStorage.getItem('partner_nickname') || '');
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
   
   // Background state
   const [chatBackgroundUrl, setChatBackgroundUrl] = useState(initialBgUrl || '');
@@ -378,7 +387,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           <div className="w-24 h-24 rounded-full bg-white/20 flex items-center justify-center mb-6 animate-pulse">
             {callMode === 'video' ? <Video size={40} /> : <Phone size={40} />}
           </div>
-          <h2 className="text-2xl font-bold mb-2">{livePartnerProfile?.display_name || 'Người ấy'}</h2>
+          <h2 className="text-2xl font-bold mb-2">{(localNickname || livePartnerProfile?.display_name || 'Người ấy')}</h2>
           <p className="text-pink-200 text-lg mb-12 animate-pulse">Đang đổ chuông...</p>
           <button 
             onClick={handleLeaveCall}
@@ -398,7 +407,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             alt="Caller"
             className="w-28 h-28 rounded-full border-4 border-white/30 shadow-xl mb-6 object-cover"
           />
-          <h2 className="text-2xl font-bold mb-2">{livePartnerProfile?.display_name || 'Người ấy'}</h2>
+          <h2 className="text-2xl font-bold mb-2">{(localNickname || livePartnerProfile?.display_name || 'Người ấy')}</h2>
           <p className="text-pink-200 text-lg mb-12 animate-pulse">
             Cuộc gọi {incomingCall.mode === 'video' ? 'Video' : 'Thoại'} đến...
           </p>
@@ -454,7 +463,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                 alt="Partner Avatar"
               />
                 <div>
-                  <h3 className="font-bold text-gray-800">{livePartnerProfile?.display_name || 'Người ấy'}</h3>
+                  <h3 className="font-bold text-gray-800">{(localNickname || livePartnerProfile?.display_name || 'Người ấy')}</h3>
                   <p className={`text-[11px] font-medium ${isPartnerOnline ? 'text-green-600' : 'text-gray-500'}`}>
                     {isPartnerOnline ? 'Đang trực tuyến 🟢' : formatLastActive(livePartnerProfile?.last_active)}
                   </p>
@@ -517,7 +526,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                       }}
                       className="bg-pink-50 rounded-lg p-2 min-w-[200px] max-w-[250px] cursor-pointer hover:bg-pink-100 transition-colors flex-shrink-0 border border-pink-100/50"
                     >
-                      <p className="text-[10px] font-bold text-pink-600 truncate">{pinned.sender_id === user.id ? 'Bạn' : (livePartnerProfile?.display_name || 'Người ấy')}</p>
+                      <p className="text-[10px] font-bold text-pink-600 truncate">{pinned.sender_id === user.id ? 'Bạn' : ((localNickname || livePartnerProfile?.display_name || 'Người ấy'))}</p>
                       <p className="text-xs text-gray-700 truncate">{pinned.content || 'Hình ảnh'}</p>
                     </div>
                   ))}
@@ -580,7 +589,9 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         {(() => {
   const isImageOnly = msg.image_url && (!msg.content || msg.content === '📸 Vừa chia sẻ một khoảnh khắc') && !msg.replied_message && !msg.content?.startsWith('CALL::');
   return (
-    <div className={`whitespace-pre-wrap word-break flex flex-col relative group ${
+    <div 
+onClick={() => setContextMenuFor(contextMenuFor === msg.id ? null : msg.id)} 
+className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-pointer ${
       isImageOnly ? 'bg-transparent text-gray-800 items-end p-0' :
                           isMe 
                             ? 'p-3 bg-pink-500 text-white rounded-[20px] rounded-br-[4px] shadow-sm items-end' 
@@ -808,16 +819,38 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                 <span className="absolute bottom-1 right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></span>
               )}
             </div>
-            <h3 className="mt-4 font-bold text-gray-800 text-xl">{livePartnerProfile?.display_name || 'Người ấy'}</h3>
+            <h3 className="mt-4 font-bold text-gray-800 text-xl">{(localNickname || livePartnerProfile?.display_name || 'Người ấy')}</h3>
           </div>
           
-          <div className="flex-1 p-2 space-y-1">
+          
+          {showMediaSidebar ? (
+            <div className="flex-1 flex flex-col">
+              <div className="p-3 flex items-center gap-2 border-b border-gray-100">
+                <button onClick={() => setShowMediaSidebar(false)} className="p-2 hover:bg-gray-100 rounded-full"><ArrowLeft size={18}/></button>
+                <span className="font-bold">Ảnh đã gửi</span>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2 grid grid-cols-3 gap-1">
+                {messages.filter(m => m.image_url).map(m => (
+                  <img key={m.id} onClick={() => setViewingImage(m.image_url)} src={m.image_url} className="w-full aspect-square object-cover rounded cursor-pointer hover:opacity-80" />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="flex-1 p-2 space-y-1">
             <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-2">Tùy chỉnh đoạn chat</div>
             
-            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
+            <button onClick={() => {
+              const newName = window.prompt('Nhập biệt danh mới cho người ấy (lưu trên máy này):', localStorage.getItem('partner_nickname') || '');
+              if (newName !== null) {
+                if (newName.trim() === '') localStorage.removeItem('partner_nickname');
+                else localStorage.setItem('partner_nickname', newName.trim());
+                window.dispatchEvent(new Event('storage'));
+                alert('Thành công!');
+              }
+            }} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
               <div className="flex items-center gap-3">
                 <UserPen size={18} className="text-pink-600" />
-                <span className="font-medium text-sm">Äá»•i biệt danh</span>
+                <span className="font-medium text-sm">Đổi biệt danh</span>
               </div>
             </button>
 
@@ -838,7 +871,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             
             <div className="px-3 py-2 text-[10px] font-bold text-gray-400 uppercase tracking-wider mt-4">File phương tiện</div>
             
-            <button className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
+            <button onClick={() => setShowMediaSidebar(true)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
               <div className="flex items-center gap-3">
                 <ImageIcon size={18} className="text-blue-500" />
                 <span className="font-medium text-sm">Ảnh, file & liên kết</span>
