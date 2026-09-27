@@ -13,6 +13,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -21,8 +22,8 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
   const startCamera = async (mode: 'user' | 'environment') => {
     setIsLoading(true);
     setError(null);
-    if (stream) {
-      stream.getTracks().forEach(track => track.stop());
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
     }
 
     try {
@@ -35,6 +36,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
         audio: false,
       });
       setStream(newStream);
+      streamRef.current = newStream;
       if (videoRef.current) {
         videoRef.current.srcObject = newStream;
       }
@@ -49,14 +51,15 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
     if (isOpen) {
       startCamera(facingMode);
     } else {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
         setStream(null);
+        streamRef.current = null;
       }
     }
     return () => {
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
       }
     };
   }, [isOpen]);
@@ -73,7 +76,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
         console.error(e);
       }
     } else {
-      alert("Trình duyệt/thiết bị của bạn không hỗ trợ bật Flash!");
+      alert("Trình duyệt web trên điện thoại của bạn (đặc biệt là iOS Safari) không hỗ trợ bật đèn Flash thông qua Web. Đây là giới hạn bảo mật của trình duyệt, không phải lỗi của ứng dụng!");
     }
   };
 
