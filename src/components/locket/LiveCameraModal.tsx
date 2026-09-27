@@ -128,7 +128,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
   if (!isOpen) return null;
 
   return (
-    <div className="relative w-full h-[100dvh] min-h-[100dvh] bg-black flex flex-col items-center justify-center z-10">
+    <div className="relative w-full h-[100dvh] min-h-[100dvh] bg-black flex flex-col items-center justify-start pt-[12vh] z-10">
       <div className="absolute top-0 left-0 right-0 p-4 safe-area-top flex justify-end items-center z-20 bg-gradient-to-b from-black/50 to-transparent gap-4">
         <button onClick={toggleFlash} className={`p-2 rounded-full backdrop-blur-md ${isFlashOn ? 'bg-yellow-400 text-black' : 'text-white bg-black/20'}`}>
           <Zap size={24} />
