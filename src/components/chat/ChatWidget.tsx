@@ -95,6 +95,15 @@ function MessageStatus({ msg }: { msg: ChatMessage }) {
 }
 
 export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline, partnerProfile, chatBackgroundUrl: initialBgUrl }: ChatWidgetProps) {
+  const { pairData, user: authUser } = useAuth();
+  let isFemale = pairData?.receiver_id === authUser?.id;
+  if (typeof window !== 'undefined') {
+    const override = window.localStorage.getItem('my_gender');
+    if (override === 'female') isFemale = true;
+    if (override === 'male') isFemale = false;
+  }
+  const myBubbleColor = isFemale ? 'bg-pink-500' : 'bg-cyan-500';
+
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -770,7 +779,7 @@ onClick={() => setContextMenuFor(contextMenuFor === msg.id ? null : msg.id)}
 className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-pointer ${
       isImageOnly ? 'bg-transparent text-gray-800 items-end p-0' :
                           isMe 
-                            ? 'p-3 bg-pink-500 text-white rounded-[20px] rounded-br-[4px] shadow-sm items-end' 
+                            ? `p-3 ${myBubbleColor} text-white rounded-[20px] rounded-br-[4px] shadow-sm items-end` 
                             : 'p-3 bg-white text-gray-800 border border-gray-100 rounded-[20px] rounded-bl-[4px] shadow-sm items-start'
                         }`}>
                                                       {msg.replied_message && (

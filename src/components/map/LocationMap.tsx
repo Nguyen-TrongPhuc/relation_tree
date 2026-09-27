@@ -79,7 +79,12 @@ export default function LocationMap() {
 
   // Role based colors
   // Assuming sender is Male (Cyan), receiver is Female (Pink)
-  const isFemale = pairData?.receiver_id === userProfile?.id;
+  let isFemale = pairData?.receiver_id === userProfile?.id;
+  if (typeof window !== 'undefined') {
+    const override = window.localStorage.getItem('my_gender');
+    if (override === 'female') isFemale = true;
+    if (override === 'male') isFemale = false;
+  }
   const myColor = isFemale ? '#ec4899' : '#06b6d4'; // pink-500 : cyan-500
   const myTailwindBg = isFemale ? 'bg-pink-500' : 'bg-cyan-500';
   const myTailwindText = isFemale ? 'text-pink-500' : 'text-cyan-500';

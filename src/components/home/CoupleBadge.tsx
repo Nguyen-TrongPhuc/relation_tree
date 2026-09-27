@@ -31,7 +31,12 @@ export default function CoupleBadge({ initialUser, initialPartner, pairData }: {
       })
       .subscribe();
 
-      const isMeFemale = pairData?.receiver_id === userProfile?.id;
+      let isMeFemale = pairData?.receiver_id === userProfile?.id;
+  if (typeof window !== 'undefined') {
+    const override = window.localStorage.getItem('my_gender');
+    if (override === 'female') isMeFemale = true;
+    if (override === 'male') isMeFemale = false;
+  }
   const myBorder = isMeFemale ? 'border-pink-400' : 'border-cyan-400';
   const myText = isMeFemale ? 'text-pink-600' : 'text-cyan-600';
   
