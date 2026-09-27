@@ -577,10 +577,14 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-teal-200 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
                       )}
                       <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                        <div className={`p-3 shadow-sm whitespace-pre-wrap word-break flex flex-col relative group ${
+                        {(() => {
+  const isImageOnly = msg.image_url && (!msg.content || msg.content === '📸 Vừa chia sẻ một khoảnh khắc') && !msg.replied_message && !msg.content?.startsWith('CALL::');
+  return (
+    <div className={`whitespace-pre-wrap word-break flex flex-col relative group ${
+      isImageOnly ? 'bg-transparent text-gray-800 items-end p-0' :
                           isMe 
-                            ? 'bg-gradient-to-br from-pink-500 to-rose-500 text-white rounded-[20px] rounded-br-[4px] shadow-md shadow-pink-500/20 items-end' 
-                            : 'bg-white text-gray-800 border border-gray-100 rounded-[20px] rounded-bl-[4px] shadow-sm items-start'
+                            ? 'p-3 bg-pink-500 text-white rounded-[20px] rounded-br-[4px] shadow-sm items-end' 
+                            : 'p-3 bg-white text-gray-800 border border-gray-100 rounded-[20px] rounded-bl-[4px] shadow-sm items-start'
                         }`}>
                                                       {msg.replied_message && (
                               <div className="w-full mb-2 bg-black/10 rounded-xl p-2 border-l-4 border-white/50 text-sm">
@@ -710,6 +714,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                             </div>
                           )}
                         </div>
+                      );
+                    })()}
 
                         {/* Message Status */}
                         {isMe && isLastMessage && (

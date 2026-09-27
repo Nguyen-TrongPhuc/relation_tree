@@ -128,11 +128,8 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center animate-in fade-in duration-200">
-      <div className="absolute top-0 left-0 right-0 p-4 safe-area-top flex justify-between items-center z-20 bg-gradient-to-b from-black/50 to-transparent">
-        <button onClick={onClose} className="p-2 text-white bg-black/20 rounded-full backdrop-blur-md">
-          <X size={24} />
-        </button>
+    <div className="relative w-full h-[100dvh] min-h-[100dvh] bg-black flex flex-col items-center justify-center z-10">
+      <div className="absolute top-0 left-0 right-0 p-4 safe-area-top flex justify-end items-center z-20 bg-gradient-to-b from-black/50 to-transparent gap-4">
         <button onClick={toggleFlash} className={`p-2 rounded-full backdrop-blur-md ${isFlashOn ? 'bg-yellow-400 text-black' : 'text-white bg-black/20'}`}>
           <Zap size={24} />
         </button>
@@ -156,7 +153,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
         <canvas ref={canvasRef} className="hidden" />
       </div>
 
-      <div className="absolute bottom-10 left-0 right-0 flex justify-center z-20">
+      <div className="absolute bottom-20 left-0 right-0 flex justify-center z-20">
         <button 
           onClick={capturePhoto}
           disabled={!stream || isLoading}
@@ -164,6 +161,17 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
         >
           <div className="w-16 h-16 rounded-full bg-white shadow-lg"></div>
         </button>
+      </div>
+      
+      <div 
+        className="absolute bottom-6 left-0 right-0 flex flex-col items-center justify-center z-20 text-white/70 animate-bounce cursor-pointer"
+        onClick={() => {
+          const container = document.querySelector('main');
+          if (container) container.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+        }}
+      >
+        <span className="text-xs font-medium mb-1">Lướt xuống dòng thời gian</span>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
       </div>
     </div>
   );

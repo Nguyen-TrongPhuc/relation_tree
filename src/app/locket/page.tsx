@@ -215,8 +215,29 @@ const fetchMoments = async (isInitial = false) => {
     return <div className="flex h-screen items-center justify-center bg-gray-50"><Loader2 className="w-8 h-8 animate-spin text-pink-400" /></div>;
   }
 
+  const filteredMoments = tab === 'gallery' ? moments.filter(m => {
+    if (galleryFilter === 'all') return true;
+    if (galleryFilter === 'me') return m.sender_id === userProfile?.id;
+    if (galleryFilter === 'partner') return m.sender_id === partnerProfile?.id;
+    return true;
+  }) : moments;
+
   return (
-    <main className="flex flex-col min-h-[100dvh] bg-gradient-to-br from-gray-50 to-pink-50/30 pb-20">
+    <main className="flex flex-col h-[100dvh] overflow-y-auto overflow-x-hidden bg-gradient-to-br from-gray-50 to-pink-50/30 pb-20 scroll-smooth">
+      {/* Camera Section (Top) */}
+      {tab === 'timeline' && (
+        <div className="w-full flex-shrink-0">
+          <LiveCameraModal 
+            isOpen={true} 
+            onClose={() => {}} 
+            onCapture={(file) => {
+              setPhotoFile(file);
+              setIsPreviewOpen(true);
+            }} 
+          />
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100 px-4 py-3 flex items-center justify-between shadow-sm">
         <Link href="/" className="p-2 -ml-2 text-gray-500 hover:text-pink-600 transition-colors">
@@ -225,7 +246,11 @@ const fetchMoments = async (isInitial = false) => {
         
         <div className="flex items-center gap-1 bg-gray-100/80 p-1 rounded-full">
           <button 
-            onClick={() => setTab('timeline')}
+            onClick={() => {
+              setTab('timeline');
+              const container = document.querySelector('main');
+              if (container) container.scrollTo({ top: window.innerHeight, behavior: 'smooth' });
+            }}
             className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-sm font-semibold transition-all ${tab === 'timeline' ? 'bg-white text-pink-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
           >
             <Clock size={16} /> Dòng thời gian
@@ -378,8 +403,30 @@ const fetchMoments = async (isInitial = false) => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-2 p-2">
-            {moments.map((moment) => (
+          <div className="flex flex-col p-2 gap-4">
+            <div className="flex justify-center gap-2 mt-2">
+              <button 
+                onClick={() => setGalleryFilter('all')} 
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${galleryFilter === 'all' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+              >
+                Tất cả
+              </button>
+              <button 
+                onClick={() => setGalleryFilter('me')} 
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${galleryFilter === 'me' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+              >
+                Của bạn
+              </button>
+              <button 
+                onClick={() => setGalleryFilter('partner')} 
+                className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${galleryFilter === 'partner' ? 'bg-pink-100 text-pink-700' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'}`}
+              >
+                Của {partnerProfile?.display_name || 'người ấy'}
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-3 gap-2">
+              {filteredMoments.map((moment) => (
               <div key={moment.id} className="aspect-square bg-gray-200 cursor-pointer hover:opacity-90 relative rounded-2xl overflow-hidden">
                 <img src={moment.image_url} alt="Gallery" className="w-full h-full object-cover" />
                 {moment.content && moment.content !== '📸 Vừa chia sẻ một khoảnh khắc' && (
@@ -394,10 +441,24 @@ const fetchMoments = async (isInitial = false) => {
             <div ref={observerTarget} className="col-span-3 py-4 flex justify-center">
               {loadingMore ? <Loader2 className="animate-spin text-pink-300" /> : null}
             </div>
+            </div>
           </div>
         )}
       </div>
       <FloatingReactions ref={reactionsRef} />
+      
+      {userProfile && (
+        <PreviewModal 
+          isOpen={isPreviewOpen} 
+          onClose={() => {
+            setIsPreviewOpen(false);
+            setPhotoFile(null);
+          }} 
+          onSend={handleSendMoment}
+          userId={userProfile.id}
+          photoFile={photoFile}
+        />
+      )}
     </main>
   );
 }

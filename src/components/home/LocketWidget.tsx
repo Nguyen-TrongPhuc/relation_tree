@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Camera, Smile, Loader2, Send, Clock, Grid } from 'lucide-react';
+import { Camera, Smile, Loader2, Send, Grid, ChevronDown } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import FloatingReactions, { FloatingReactionsRef } from '@/components/locket/FloatingReactions';
 import LiveCameraModal from '@/components/locket/LiveCameraModal';
@@ -22,7 +22,6 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
   const reactionsRef = useRef<FloatingReactionsRef>(null);
@@ -49,7 +48,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
       .in('sender_id', [userProfile.id, partnerProfile.id])
       .eq('is_moment', true)
       .order('created_at', { ascending: false })
-      .limit(10);
+      .limit(20);
     
     setMoments(data || []);
     setLoading(false);
@@ -81,7 +80,6 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
     const currentReactions = currentMoment.reactions || {};
     const newReactions = { ...currentReactions, [userProfile.id]: emoji };
     
-    // Optimistic UI
     const updatedMoments = [...moments];
     updatedMoments[currentIndex] = { ...currentMoment, reactions: newReactions };
     setMoments(updatedMoments);
@@ -108,21 +106,10 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
     setIsSendingReply(false);
   };
 
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      setPhotoFile(file);
-      setIsPreviewOpen(true);
-    }
-    // Reset input
-    if (fileInputRef.current) fileInputRef.current.value = '';
-  };
-
   const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
     const container = e.currentTarget;
     const scrollPosition = container.scrollLeft;
     const width = container.clientWidth;
-    // Calculate index based on scroll position (round to nearest integer)
     const newIndex = Math.round(scrollPosition / width);
     if (newIndex !== currentIndex && newIndex >= 0 && newIndex < moments.length) {
       setCurrentIndex(newIndex);
@@ -131,35 +118,35 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
 
   const currentMoment = moments[currentIndex];
 
+  const formatTimeAgo = (dateStr: string) => {
+    const diff = Date.now() - new Date(dateStr).getTime();
+    const mins = Math.floor(diff / 60000);
+    if (mins < 1) return 'Vừa xong';
+    if (mins < 60) return `${mins} phút trước`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours} giờ trước`;
+    const days = Math.floor(hours / 24);
+    return `${days} ngày trước`;
+  };
+
   return (
     <div className="w-full flex flex-col items-center gap-4">
-      {/* Header Buttons */}
-      <div className="w-full max-w-[320px] flex justify-between px-2">
-        <Link href="/locket?tab=timeline" className="flex items-center gap-1.5 text-pink-700 bg-pink-100/50 hover:bg-pink-100 px-3 py-1.5 rounded-full text-xs font-semibold transition">
-          <Clock size={14} /> Dòng thời gian
-        </Link>
-        <Link href="/locket?tab=gallery" className="flex items-center gap-1.5 text-pink-700 bg-pink-100/50 hover:bg-pink-100 px-3 py-1.5 rounded-full text-xs font-semibold transition">
-          <Grid size={14} /> Kho ảnh
-        </Link>
-      </div>
-
-      
-
-      <div className="relative w-full aspect-square max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
+      {/* Main Locket Frame */}
+      <div className="relative w-full aspect-square max-w-[320px] rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden bg-white/50">
         {loading ? (
-          <div className="flex h-full w-full items-center justify-center">
+          <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
             <Loader2 className="w-8 h-8 animate-spin text-pink-300" />
           </div>
         ) : moments.length > 0 ? (
           <div 
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex h-full w-full overflow-x-auto snap-x snap-mandatory hide-scrollbar"
+            className="flex absolute inset-0 overflow-x-auto snap-x snap-mandatory hide-scrollbar"
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
-            {moments.map((moment, idx) => (
-              <div key={moment.id} className="min-w-full h-full flex-shrink-0 snap-center relative">
-                <img src={moment.image_url} alt="Moment" className="w-full h-full object-contain bg-black" />
+            {moments.map((moment) => (
+              <div key={moment.id} className="flex-[0_0_100%] h-full snap-center relative overflow-hidden">
+                <img src={moment.image_url} alt="Moment" className="w-full h-full object-cover object-center absolute inset-0" />
                 
                 {/* Header info */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-center drop-shadow-md z-10 pointer-events-none">
@@ -197,44 +184,42 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
                   </div>
                 )}
                 
-                {/* Camera trigger overlay (nhấp vào vùng trống để chụp ảnh mới) */}
-                <button 
-                  onClick={() => setIsCameraOpen(true)}
+                {/* Camera trigger overlay */}
+                <Link 
+                  href="/locket"
                   className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 bg-black/20 transition-opacity flex items-center justify-center z-20"
                 >
                   <div className="bg-white/90 p-4 rounded-full shadow-lg backdrop-blur-sm">
                     <Camera className="text-pink-600" size={32} />
                   </div>
-                </button>
+                </Link>
               </div>
             ))}
           </div>
         ) : (
-          <button 
-            onClick={() => setIsCameraOpen(true)}
-            className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 gap-4"
+          <Link 
+            href="/locket"
+            className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 gap-4 absolute inset-0 z-20"
           >
             <div className="w-20 h-20 rounded-full bg-white shadow-md flex items-center justify-center border border-pink-100">
               <Camera className="text-pink-400" size={40} />
             </div>
             <p className="text-white/80 font-medium text-sm drop-shadow-md">Chạm để gửi khoảnh khắc</p>
-          </button>
+          </Link>
         )}
 
         {/* Dots Indicator */}
         {moments.length > 1 && (
           <div className="absolute bottom-2 left-0 right-0 flex justify-center gap-1 z-30 pointer-events-none">
-            {moments.map((_, i) => (
+            {moments.slice(0, 8).map((_, i) => (
               <div key={i} className={`h-1.5 rounded-full transition-all ${i === currentIndex ? 'w-4 bg-white' : 'w-1.5 bg-white/50'}`} />
             ))}
+            {moments.length > 8 && <div className="w-1.5 h-1.5 rounded-full bg-white/30" />}
           </div>
         )}
       </div>
 
-      {/* Style hide-scrollbar */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .hide-scrollbar::-webkit-scrollbar { display: none; }
-      `}} />
+      <style dangerouslySetInnerHTML={{__html: `.hide-scrollbar::-webkit-scrollbar { display: none; }`}} />
 
       {/* Reply and React Box */}
       {currentMoment && currentMoment.sender_id === partnerProfile.id && (
@@ -253,7 +238,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
               value={replyText}
               onChange={e => setReplyText(e.target.value)}
               placeholder="Trả lời khoảnh khắc này..."
-              className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-2 text-gray-700"
+              className="flex-1 bg-transparent border-none focus:ring-0 text-sm px-2 text-gray-700 outline-none"
             />
             <button 
               type="submit"
@@ -264,7 +249,6 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
             </button>
           </form>
 
-          {/* Emoji Popup */}
           {showEmojis && (
             <div className="absolute bottom-[110%] left-0 bg-white shadow-xl rounded-full px-4 py-2 flex gap-3 border border-gray-100 animate-in slide-in-from-bottom-2 z-40">
               {EMOJIS.map(emoji => (
@@ -281,25 +265,6 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         </div>
       )}
 
-      <LiveCameraModal 
-        isOpen={isCameraOpen} 
-        onClose={() => setIsCameraOpen(false)} 
-        onCapture={(file) => {
-          setPhotoFile(file);
-          setIsCameraOpen(false);
-          setIsPreviewOpen(true);
-        }} 
-      />
-      <PreviewModal 
-        isOpen={isPreviewOpen} 
-        onClose={() => {
-          setIsPreviewOpen(false);
-          setPhotoFile(null);
-        }} 
-        onSend={handleSendMoment}
-        userId={userProfile.id}
-        photoFile={photoFile}
-      />
       <FloatingReactions ref={reactionsRef} />
     </div>
   );
