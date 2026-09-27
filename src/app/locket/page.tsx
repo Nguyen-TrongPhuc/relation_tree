@@ -81,7 +81,7 @@ export default function LocketPage() {
   };
 
   const handleSendMoment = async (imageUrl: string, caption: string) => {
-    await supabase.from('messages').insert({
+    const { error: insertError } = await supabase.from('messages').insert({
       sender_id: userProfile.id,
       receiver_id: partnerProfile.id,
       content: caption || '📸 Vừa chia sẻ một khoảnh khắc',

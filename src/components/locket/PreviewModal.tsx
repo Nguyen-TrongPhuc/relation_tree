@@ -66,12 +66,13 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
       const fileName = `locket-${userId}-${Date.now()}.jpg`;
       const { error: uploadError } = await supabase.storage
         .from('avatars') // Using avatars bucket for now
-        .upload(fileName, finalFile, { contentType: 'image/jpeg' });
+        .upload(fileName, finalFile, { contentType: 'image/jpeg', upsert: true });
         
       if (uploadError) throw uploadError;
       
       const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-      await onSend(data.publicUrl, caption);
+      const sendResult = await onSend(data.publicUrl, caption);
+      if (sendResult && sendResult.error) throw sendResult.error;
       onClose();
     } catch (err: any) {
       alert('Lỗi khi gửi ảnh: ' + err.message);
@@ -88,13 +89,12 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
         </button>
       </div>
 
-      {/* Filter Options */}
-      <div className="absolute top-20 left-0 right-0 px-4 z-20 flex gap-2 overflow-x-auto no-scrollbar py-2">
+      <div className="w-full flex justify-center gap-3 px-4 mb-4 mt-16 overflow-x-auto hide-scrollbar z-20">
         <button 
-          onClick={() => setIsFlipped(!isFlipped)}
-          className="whitespace-nowrap px-4 py-2 mr-2 rounded-full text-sm font-medium backdrop-blur-md transition-all bg-gray-800 text-white border border-gray-600 hover:bg-gray-700"
+          onClick={() => setIsFlipped(!isFlipped)} 
+          className="whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium backdrop-blur-md transition-all bg-black/30 text-white border border-white/20 hover:bg-black/50"
         >
-          {isFlipped ? 'Khôi phục' : 'Lật ảnh ↔️'}
+          Lật ảnh
         </button>
         {FILTERS.map(f => (
           <button 
@@ -111,7 +111,7 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
         ))}
       </div>
 
-      <div className="relative w-full max-w-md aspect-square bg-gray-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-md aspect-square bg-gray-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col mb-6">
         <img 
           src={objectUrl} 
           alt="Captured" 
@@ -120,7 +120,7 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
         />
         
         {/* Caption Overlay */}
-        <div className="absolute bottom-20 left-0 right-0 px-6">
+        <div className="absolute bottom-6 left-0 right-0 px-6">
           <input
             type="text"
             value={caption}
@@ -129,17 +129,26 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
             className="w-full bg-black/40 text-white placeholder-white/70 px-4 py-3 rounded-xl border border-white/20 backdrop-blur-md focus:outline-none focus:ring-2 focus:ring-pink-500 text-center text-lg font-medium shadow-lg"
           />
         </div>
+      </div>
 
-        <div className="absolute bottom-6 left-0 right-0 flex justify-center px-10">
-          <button 
-            onClick={sendPhoto}
-            disabled={isUploading}
-            className="flex items-center justify-center w-full gap-2 p-4 bg-pink-500 text-white rounded-full shadow-lg font-bold disabled:opacity-50 active:scale-95 transition-transform"
-          >
-            {isUploading ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />}
-            {isUploading ? 'Đang gửi...' : 'Gửi cho người ấy'}
-          </button>
-        </div>
+      {/* Buttons Outside */}
+      <div className="w-full max-w-md px-6 flex flex-col gap-3 pb-8">
+        <button 
+          onClick={sendPhoto}
+          disabled={isUploading}
+          className="flex items-center justify-center w-full gap-2 p-4 bg-pink-500 text-white rounded-full shadow-xl font-bold disabled:opacity-50 active:scale-95 transition-transform"
+        >
+          {isUploading ? <Loader2 className="animate-spin" size={24} /> : <Send size={24} />}
+          {isUploading ? 'Đang gửi...' : 'Gửi cho người ấy'}
+        </button>
+        
+        <button 
+          onClick={onClose}
+          disabled={isUploading}
+          className="flex items-center justify-center w-full gap-2 p-3 bg-white/10 text-white rounded-full font-medium active:scale-95 transition-transform border border-white/10 hover:bg-white/20"
+        >
+          Chụp lại
+        </button>
       </div>
     </div>
   );
