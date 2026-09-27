@@ -140,7 +140,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
 
       
 
-      <div className="relative w-full aspect-[4/5] max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
+      <div className="relative w-full aspect-[3/4] max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
         {loading ? (
           <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-pink-300" />

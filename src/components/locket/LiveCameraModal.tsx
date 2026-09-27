@@ -74,15 +74,31 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    const targetRatio = 3 / 4;
+    const videoRatio = video.videoWidth / video.videoHeight;
+    
+    let drawWidth = video.videoWidth;
+    let drawHeight = video.videoHeight;
+    let offsetX = 0;
+    let offsetY = 0;
+
+    if (videoRatio > targetRatio) {
+      drawWidth = video.videoHeight * targetRatio;
+      offsetX = (video.videoWidth - drawWidth) / 2;
+    } else {
+      drawHeight = video.videoWidth / targetRatio;
+      offsetY = (video.videoHeight - drawHeight) / 2;
+    }
+
+    canvas.width = drawWidth;
+    canvas.height = drawHeight;
 
     if (facingMode === 'user') {
       ctx.translate(canvas.width, 0);
       ctx.scale(-1, 1);
     }
 
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    ctx.drawImage(video, offsetX, offsetY, drawWidth, drawHeight, 0, 0, drawWidth, drawHeight);
 
     canvas.toBlob((blob) => {
       if (blob) {
@@ -105,7 +121,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
         </button>
       </div>
 
-      <div className="relative w-full h-full flex items-center justify-center bg-black overflow-hidden">
+      <div className="relative w-full max-w-md aspect-[3/4] flex items-center justify-center bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
         {isLoading && <Loader2 className="absolute text-white animate-spin z-10" size={40} />}
         {error && <p className="absolute text-red-500 z-10 px-6 text-center">{error}</p>}
         
