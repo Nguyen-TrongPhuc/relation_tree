@@ -290,7 +290,7 @@ const fetchMoments = async (isInitial = false) => {
                 </div>
 
                 {/* Photo */}
-                <div className="relative w-full aspect-[3/4] bg-gray-900">
+                <div className="relative w-full aspect-square bg-gray-900 rounded-2xl overflow-hidden mx-auto max-w-md">
                   <img src={moment.image_url} alt="Locket" className="w-full h-full object-cover" />
                   
                   {/* Reactions Floating */}
@@ -378,9 +378,9 @@ const fetchMoments = async (isInitial = false) => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-1 p-1">
+          <div className="grid grid-cols-3 gap-2 p-2">
             {moments.map((moment) => (
-              <div key={moment.id} className="aspect-square bg-gray-200 cursor-pointer hover:opacity-90 relative">
+              <div key={moment.id} className="aspect-square bg-gray-200 cursor-pointer hover:opacity-90 relative rounded-2xl overflow-hidden">
                 <img src={moment.image_url} alt="Gallery" className="w-full h-full object-cover" />
                 {moment.content && moment.content !== '📸 Vừa chia sẻ một khoảnh khắc' && (
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex items-end p-2 opacity-0 hover:opacity-100 transition-opacity">

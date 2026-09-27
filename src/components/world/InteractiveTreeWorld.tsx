@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Tree2D from '@/components/tree/Tree2D';
 import { buildTreeState, getVietnamTime, formatYYYYMMDD } from '@/lib/tree/engine';
-import { MessageCircle, User } from 'lucide-react';
+import { MessageCircle, User, Calendar } from 'lucide-react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import WishEnvelope from '@/components/world/WishEnvelope';

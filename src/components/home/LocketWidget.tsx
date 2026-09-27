@@ -159,7 +159,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
           >
             {moments.map((moment, idx) => (
               <div key={moment.id} className="min-w-full h-full flex-shrink-0 snap-center relative">
-                <img src={moment.image_url} alt="Moment" className="w-full h-full object-cover" />
+                <img src={moment.image_url} alt="Moment" className="w-full h-full object-contain bg-black" />
                 
                 {/* Header info */}
                 <div className="absolute top-4 left-4 right-4 flex justify-between items-center drop-shadow-md z-10 pointer-events-none">
