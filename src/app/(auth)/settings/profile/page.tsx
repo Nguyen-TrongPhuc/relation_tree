@@ -187,8 +187,8 @@ export default function ProfilePage() {
             <label className="block text-sm font-semibold text-pink-800 mb-2">Giới tính của bạn (để phối màu)</label>
             <div className="flex gap-4">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="gender" value="male" defaultChecked={typeof window !== 'undefined' && localStorage.getItem('my_gender') === 'male'} onChange={() => { localStorage.setItem('my_gender', 'male'); window.dispatchEvent(new Event('storage')); }} className="w-4 h-4 text-cyan-500 border-gray-300 focus:ring-cyan-500" />
-                <span className="text-sm font-medium text-cyan-700">Nam (Xanh ngọc)</span>
+                <input type="radio" name="gender" value="male" defaultChecked={typeof window !== 'undefined' && localStorage.getItem('my_gender') === 'male'} onChange={() => { localStorage.setItem('my_gender', 'male'); window.dispatchEvent(new Event('storage')); }} className="w-4 h-4 text-teal-500 border-gray-300 focus:ring-teal-500" />
+                <span className="text-sm font-medium text-teal-700">Nam (Xanh dương ngọc)</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
                 <input type="radio" name="gender" value="female" defaultChecked={typeof window !== 'undefined' && localStorage.getItem('my_gender') === 'female'} onChange={() => { localStorage.setItem('my_gender', 'female'); window.dispatchEvent(new Event('storage')); }} className="w-4 h-4 text-pink-500 border-gray-300 focus:ring-pink-500" />

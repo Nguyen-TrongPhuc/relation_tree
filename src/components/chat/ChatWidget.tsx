@@ -102,7 +102,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     if (override === 'female') isFemale = true;
     if (override === 'male') isFemale = false;
   }
-  const myBubbleColor = isFemale ? 'bg-pink-500' : 'bg-cyan-500';
+  const myBubbleColor = isFemale ? 'bg-pink-500' : 'bg-teal-500';
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -764,7 +764,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                 return (
                   <React.Fragment key={msg.id}>
                     {dateHeader}
-                    <div id={"msg-" + msg.id} className={`flex w-full gap-2 transition-colors duration-500 ${isMe ? 'justify-end' : 'justify-start'} ${highlightedMsgId === msg.id ? isFemale ? 'bg-pink-100/50 p-2 rounded-xl' : 'bg-cyan-100/50 p-2 rounded-xl' : ''}`}>
+                    <div id={"msg-" + msg.id} className={`flex w-full gap-2 transition-colors duration-500 ${isMe ? 'justify-end' : 'justify-start'} ${highlightedMsgId === msg.id ? isFemale ? 'bg-pink-100/50 p-2 rounded-xl' : 'bg-teal-100/50 p-2 rounded-xl' : ''}`}>
                       {!isMe && (
                         <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-teal-200 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
                       )}

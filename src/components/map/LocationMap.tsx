@@ -85,13 +85,13 @@ export default function LocationMap() {
     if (override === 'female') isFemale = true;
     if (override === 'male') isFemale = false;
   }
-  const myColor = isFemale ? '#ec4899' : '#06b6d4'; // pink-500 : cyan-500
-  const myTailwindBg = isFemale ? 'bg-pink-500' : 'bg-cyan-500';
-  const myTailwindText = isFemale ? 'text-pink-500' : 'text-cyan-500';
+  const myColor = isFemale ? '#ec4899' : '#14b8a6'; // pink-500 : teal-500
+  const myTailwindBg = isFemale ? 'bg-pink-500' : 'bg-teal-500';
+  const myTailwindText = isFemale ? 'text-pink-500' : 'text-teal-500';
   
-  const partnerColor = !isFemale ? '#ec4899' : '#06b6d4'; // pink-500 : cyan-500
-  const pTailwindBg = !isFemale ? 'bg-pink-500' : 'bg-cyan-500';
-  const pTailwindText = !isFemale ? 'text-pink-500' : 'text-cyan-500';
+  const partnerColor = !isFemale ? '#ec4899' : '#14b8a6'; // pink-500 : teal-500
+  const pTailwindBg = !isFemale ? 'bg-pink-500' : 'bg-teal-500';
+  const pTailwindText = !isFemale ? 'text-pink-500' : 'text-teal-500';
 
   const myAvatarUrl = userProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile?.id}`;
   const partnerAvatarUrl = partnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile?.id}`;
@@ -167,7 +167,7 @@ export default function LocationMap() {
                         <Navigation2 size={20} className="text-gray-400" />
                         <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Khoảng cách</span>
                     </div>
-                    <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-cyan-500">
+                    <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-teal-500">
                         {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`}
                     </div>
                 </div>

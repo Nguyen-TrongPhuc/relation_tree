@@ -42,11 +42,11 @@ export default function CoupleBadge({ initialUser, initialPartner, pairData }: {
     if (override === 'female') isMeFemale = true;
     if (override === 'male') isMeFemale = false;
   }
-  const myBorder = isMeFemale ? 'border-pink-400' : 'border-cyan-400';
-  const myText = isMeFemale ? 'text-pink-600' : 'text-cyan-600';
+  const myBorder = isMeFemale ? 'border-pink-400' : 'border-teal-400';
+  const myText = isMeFemale ? 'text-pink-600' : 'text-teal-600';
   
-  const partnerBorder = !isMeFemale ? 'border-pink-400' : 'border-cyan-400';
-  const partnerText = !isMeFemale ? 'text-pink-600' : 'text-cyan-600';
+  const partnerBorder = !isMeFemale ? 'border-pink-400' : 'border-teal-400';
+  const partnerText = !isMeFemale ? 'text-pink-600' : 'text-teal-600';
 
   return (
     <div className="flex items-center justify-center gap-8 bg-white/60 backdrop-blur-2xl px-10 py-5 rounded-full shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/60">
