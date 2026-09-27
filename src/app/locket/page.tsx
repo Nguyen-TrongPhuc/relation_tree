@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import Link from 'next/link';
 import { ArrowLeft, Clock, Grid, Loader2, Smile, Send, Heart, Download, Trash, MoreHorizontal, Camera } from 'lucide-react';
+import LiveCameraModal from '@/components/locket/LiveCameraModal';
 import PreviewModal from '@/components/locket/PreviewModal';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
@@ -19,6 +20,7 @@ export default function LocketPage() {
   const [tab, setTab] = useState<'timeline' | 'gallery'>(initialTab);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [moments, setMoments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);

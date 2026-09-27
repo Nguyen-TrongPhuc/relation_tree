@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Smile, Loader2, Send, Clock, Grid } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
+import LiveCameraModal from '@/components/locket/LiveCameraModal';
 import PreviewModal from '../locket/PreviewModal';
 import Link from 'next/link';
 
@@ -18,6 +19,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
   
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -136,16 +138,9 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         </Link>
       </div>
 
-      <input 
-        type="file" 
-        accept="image/*" 
-        capture="user" 
-        className="hidden" 
-        ref={fileInputRef} 
-        onChange={handleFileSelect} 
-      />
+      
 
-      <div className="relative w-full aspect-square max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
+      <div className="relative w-full aspect-[4/5] max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
         {loading ? (
           <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-pink-300" />
@@ -199,7 +194,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
                 
                 {/* Camera trigger overlay (nhấp vào vùng trống để chụp ảnh mới) */}
                 <button 
-                  onClick={() => fileInputRef.current?.click()}
+                  onClick={() => setIsCameraOpen(true)}
                   className="absolute inset-0 w-full h-full opacity-0 hover:opacity-100 bg-black/20 transition-opacity flex items-center justify-center z-20"
                 >
                   <div className="bg-white/90 p-4 rounded-full shadow-lg backdrop-blur-sm">
@@ -211,7 +206,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
           </div>
         ) : (
           <button 
-            onClick={() => fileInputRef.current?.click()}
+            onClick={() => setIsCameraOpen(true)}
             className="w-full h-full flex flex-col items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900 gap-4"
           >
             <div className="w-20 h-20 rounded-full bg-white shadow-md flex items-center justify-center border border-pink-100">
@@ -281,6 +276,15 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         </div>
       )}
 
+      <LiveCameraModal 
+        isOpen={isCameraOpen} 
+        onClose={() => setIsCameraOpen(false)} 
+        onCapture={(file) => {
+          setPhotoFile(file);
+          setIsCameraOpen(false);
+          setIsPreviewOpen(true);
+        }} 
+      />
       <PreviewModal 
         isOpen={isPreviewOpen} 
         onClose={() => {
