@@ -82,7 +82,7 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
   };
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-[9999] bg-gradient-to-br from-pink-950 via-gray-900 to-teal-950 flex flex-col items-center justify-center animate-in fade-in duration-200 backdrop-blur-xl">
       <div className="absolute top-0 left-0 right-0 p-4 safe-area-top flex justify-between items-center z-10 bg-gradient-to-b from-black/50 to-transparent">
         <button onClick={onClose} className="p-2 text-white bg-black/20 rounded-full backdrop-blur-md">
           <X size={24} />
