@@ -124,6 +124,7 @@ export default function LocationMap() {
         zoom={16} 
         zoomControl={false}
         className="w-full h-full z-0"
+        style={{ width: '100%', height: '100%', position: 'absolute', top: 0, left: 0, zIndex: 0 }}
       >
         <TileLayer
           attribution='&copy; OpenStreetMap'

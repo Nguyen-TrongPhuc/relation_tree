@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -39,5 +40,5 @@ export default function MapPage() {
     );
   }
 
-  return <LocationMap />;
+  return <ErrorBoundary><LocationMap /></ErrorBoundary>;
 }

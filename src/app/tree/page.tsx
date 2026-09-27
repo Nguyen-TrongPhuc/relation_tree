@@ -4,6 +4,7 @@ import InteractiveTreeWorld from '@/components/world/InteractiveTreeWorld';
 import { formatYYYYMMDD } from '@/lib/tree/engine';
 import { MOCK_START_DATE } from '@/lib/tree/mockData';
 import { useAuth } from '@/components/providers/AuthProvider';
+import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo } from 'react';
 import { Loader2 } from 'lucide-react';
@@ -64,13 +65,13 @@ export default function TreePage() {
 
   return (
     <main className="flex min-h-[100dvh] w-full overflow-hidden bg-gradient-to-br from-[#fdf2f8] to-[#f0fdfa] relative font-sans text-slate-800">
-      <InteractiveTreeWorld 
+      <ErrorBoundary><InteractiveTreeWorld 
         rawDailyData={rawDailyData} 
         events={events} 
         startDate={startDate} 
         userProfile={userProfile}
         partnerProfile={partnerProfile}
       />
-    </main>
+    </ErrorBoundary></main>
   );
 }
