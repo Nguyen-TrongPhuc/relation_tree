@@ -52,22 +52,22 @@ export default function CoupleBadge({ initialUser, initialPartner, pairData }: {
     <div className="flex items-center justify-center gap-8 bg-white/60 backdrop-blur-2xl px-10 py-5 rounded-full shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/60">
       <div className="flex flex-col items-center">
         <img 
-          src={userProfile?.avatar_url || \`https://api.dicebear.com/7.x/adventurer/svg?seed=\${userProfile?.id}\`} 
+          src={userProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile?.id}`} 
           alt="You" 
-          className={\`w-16 h-16 rounded-full border-4 \${myBorder} object-cover shadow-lg\`}
+          className={`w-16 h-16 rounded-full border-4 ${myBorder} object-cover shadow-lg`}
         />
-        <span className={\`text-sm font-black \${myText} mt-2\`}>{userProfile?.display_name || 'Bạn'}</span>
+        <span className={`text-sm font-black ${myText} mt-2`}>{userProfile?.display_name || 'Bạn'}</span>
       </div>
       
       <div className="text-red-500 text-3xl animate-pulse drop-shadow-md">❤️</div>
       
       <div className="flex flex-col items-center">
         <img 
-          src={partnerProfile?.avatar_url || \`https://api.dicebear.com/7.x/adventurer/svg?seed=\${partnerProfile?.id}\`} 
+          src={partnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile?.id}`} 
           alt="Partner" 
-          className={\`w-16 h-16 rounded-full border-4 \${partnerBorder} object-cover shadow-lg\`}
+          className={`w-16 h-16 rounded-full border-4 ${partnerBorder} object-cover shadow-lg`}
         />
-        <span className={\`text-sm font-black \${partnerText} mt-2\`}>{partnerProfile?.display_name || 'Người ấy'}</span>
+        <span className={`text-sm font-black ${partnerText} mt-2`}>{partnerProfile?.display_name || 'Người ấy'}</span>
       </div>
     </div>
   );
