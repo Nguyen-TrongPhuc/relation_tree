@@ -375,9 +375,22 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     scrollToBottom();
   };
 
-  const displayedMessages = isSearching && searchQuery.trim() 
+  const displayedMessages = messages;
+  const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
+
+  const searchResults = isSearching && searchQuery.trim() 
     ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
-    : messages;
+    : [];
+
+  const scrollToMessage = (id: string) => {
+    const el = document.getElementById('msg-' + id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightedMsgId(id);
+      setIsSearching(false);
+      setTimeout(() => setHighlightedMsgId(null), 3000); // clear highlight after 3s
+    }
+  };
 
   return (
     <>
@@ -491,12 +504,19 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                   placeholder="Tìm kiếm trong đoạn chat..." 
                   className="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-pink-400"
                 />
+              
               </div>
-              <button onClick={() => { setIsSearching(false); setSearchQuery(''); }} className="text-gray-500 hover:text-gray-700 p-1">
-                <X size={18} />
-              </button>
-            </div>
-          )}
+              {searchResults.length > 0 && (
+                <div className="absolute top-16 left-4 right-4 bg-white/95 backdrop-blur-md shadow-xl rounded-xl border border-gray-100 z-50 max-h-64 overflow-y-auto divide-y divide-gray-100">
+                  {searchResults.map(m => (
+                    <button key={m.id} onClick={() => scrollToMessage(m.id)} className="w-full text-left p-3 hover:bg-pink-50 transition-colors flex flex-col gap-1">
+                      <span className="text-xs font-bold text-gray-500">{new Date(m.created_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}</span>
+                      <span className="text-sm text-gray-800 line-clamp-2">{m.content}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            )}
         </div>
 
         {/* Message List */}
@@ -581,7 +601,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                 return (
                   <React.Fragment key={msg.id}>
                     {dateHeader}
-                    <div className={`flex w-full gap-2 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                    <div id={"msg-" + msg.id} className={`flex w-full gap-2 transition-colors duration-500 ${isMe ? 'justify-end' : 'justify-start'} ${highlightedMsgId === msg.id ? 'bg-pink-100/50 p-2 rounded-xl' : ''}`}>
                       {!isMe && (
                         <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-teal-200 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
                       )}
@@ -747,12 +767,16 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
 
         {/* Attachment Preview */}
         {attachment && (
-          <div className="px-4 py-2 bg-gray-50 border-t border-pink-100 flex items-center justify-between z-20">
-            <div className="flex items-center gap-2 text-sm text-pink-700">
-              <ImageIcon size={16} />
-              <span className="truncate max-w-[200px]">{attachment.name}</span>
+          <div className="px-4 py-3 bg-gray-50 border-t border-pink-100 flex items-center justify-between z-20 relative">
+            <div className="flex items-center gap-3">
+              <img src={URL.createObjectURL(attachment)} alt="preview" className="w-16 h-16 object-cover rounded-lg border shadow-sm" />
+              <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">{attachment.name}</span>
             </div>
-            <button onClick={() => setAttachment(null)} className="text-gray-400 hover:text-red-500">
+            <button onClick={() => setAttachment(null)} className="p-2 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm border">
+              <X size={16} />
+            </button>
+          </div>
+        )} className="text-gray-400 hover:text-red-500">
               <X size={16} />
             </button>
           </div>
