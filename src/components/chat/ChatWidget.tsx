@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { getMessages, sendMessage, searchMessages, updateChatBackground, updateMessageContent, deleteMessage, recallMessage, togglePinMessage } from '@/app/actions/chat';
 import { Send, ArrowLeft, Phone, Video, Info, UserPen, Palette, Search, Image as ImageIcon, X, Loader2, Check, CheckCheck, Trash, Pin, Reply } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '@/components/providers/AuthProvider';
 import dynamic from 'next/dynamic';
 
 const CallScreen = dynamic(() => import('./CallScreen'), { ssr: false });
@@ -621,7 +622,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                 <div>
                   <h3 className="font-bold text-gray-800">{(localNickname || livePartnerProfile?.display_name || 'Người ấy')}</h3>
                   <p className={`text-[11px] font-medium ${isPartnerOnline ? 'text-green-600' : 'text-gray-500'}`}>
-                    {isPartnerOnline ? 'Đang trực tuyến 🟢' : formatLastActive(livePartnerProfile?.last_active)}
+                    {isPartnerOnline ? 'Đang trực tuyến ' : formatLastActive(livePartnerProfile?.last_active)}
                   </p>
                 </div>
             </div>
@@ -754,7 +755,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                 return (
                   <React.Fragment key={msg.id}>
                     {dateHeader}
-                    <div id={"msg-" + msg.id} className={`flex w-full gap-2 transition-colors duration-500 ${isMe ? 'justify-end' : 'justify-start'} ${highlightedMsgId === msg.id ? 'bg-pink-100/50 p-2 rounded-xl' : ''}`}>
+                    <div id={"msg-" + msg.id} className={`flex w-full gap-2 transition-colors duration-500 ${isMe ? 'justify-end' : 'justify-start'} ${highlightedMsgId === msg.id ? isFemale ? 'bg-pink-100/50 p-2 rounded-xl' : 'bg-cyan-100/50 p-2 rounded-xl' : ''}`}>
                       {!isMe && (
                         <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-teal-200 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
                       )}

@@ -68,7 +68,7 @@ export default function DashboardPage() {
 
         {/* Header / Couple Badge */}
         <div className="flex flex-col items-center space-y-4">
-          <CoupleBadge initialUser={userProfile} initialPartner={partnerProfile} />
+          <CoupleBadge initialUser={userProfile} initialPartner={partnerProfile} pairData={pairData} />
           <p className="text-pink-900/60 text-sm font-medium">Không gian dành riêng cho hai người</p>
         </div>
 

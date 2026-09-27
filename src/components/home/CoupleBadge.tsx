@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function CoupleBadge({ initialUser, initialPartner }: { initialUser: any, initialPartner: any }) {
+export default function CoupleBadge({ initialUser, initialPartner, pairData }: { initialUser: any, initialPartner: any, pairData: any }) {
   const [userProfile, setUserProfile] = useState(initialUser);
   const [partnerProfile, setPartnerProfile] = useState(initialPartner);
   const supabase = createClient();
@@ -31,31 +31,33 @@ export default function CoupleBadge({ initialUser, initialPartner }: { initialUs
       })
       .subscribe();
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [initialUser.id, initialPartner.id, supabase]);
+      const isMeFemale = pairData?.receiver_id === userProfile?.id;
+  const myBorder = isMeFemale ? 'border-pink-400' : 'border-cyan-400';
+  const myText = isMeFemale ? 'text-pink-600' : 'text-cyan-600';
+  
+  const partnerBorder = !isMeFemale ? 'border-pink-400' : 'border-cyan-400';
+  const partnerText = !isMeFemale ? 'text-pink-600' : 'text-cyan-600';
 
   return (
-    <div className="flex items-center justify-center gap-6 bg-white/40 backdrop-blur-xl px-8 py-4 rounded-full shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/50">
+    <div className="flex items-center justify-center gap-8 bg-white/60 backdrop-blur-2xl px-10 py-5 rounded-full shadow-[0_8px_32px_0_rgba(31,38,135,0.07)] border border-white/60">
       <div className="flex flex-col items-center">
         <img 
-          src={userProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile.id}`} 
+          src={userProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile?.id}`} 
           alt="You" 
-          className="w-16 h-16 rounded-full border-4 border-pink-200 object-cover shadow-md"
+          className={`w-16 h-16 rounded-full border-4 ${myBorder} object-cover shadow-lg`}
         />
-        <span className="text-sm font-bold text-pink-800 mt-2">{userProfile.display_name}</span>
+        <span className={`text-sm font-black ${myText} mt-2`}>{userProfile?.display_name || 'Bạn'}</span>
       </div>
       
-      <div className="text-red-400 text-3xl animate-pulse drop-shadow-md">❤️</div>
+      <div className="text-red-500 text-3xl animate-pulse drop-shadow-md">❤️</div>
       
       <div className="flex flex-col items-center">
         <img 
-          src={partnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile.id}`} 
+          src={partnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile?.id}`} 
           alt="Partner" 
-          className="w-16 h-16 rounded-full border-4 border-pink-200 object-cover shadow-md"
+          className={`w-16 h-16 rounded-full border-4 ${partnerBorder} object-cover shadow-lg`}
         />
-        <span className="text-sm font-bold text-pink-800 mt-2">{partnerProfile.display_name}</span>
+        <span className={`text-sm font-black ${partnerText} mt-2`}>{partnerProfile?.display_name || 'Người ấy'}</span>
       </div>
     </div>
   );

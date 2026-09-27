@@ -1,4 +1,6 @@
-'use client';
+const fs = require('fs');
+
+const locationMapCode = `'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline } from 'react-leaflet';
@@ -26,19 +28,19 @@ function createAvatarIcon(avatarUrl: string, isOnline: boolean, themeColor: stri
     className: 'custom-avatar-marker',
     iconSize: [52, 60],
     iconAnchor: [26, 60],
-    html: `
+    html: \`
       <div style="position: relative; width: 52px; height: 60px; display: flex; flex-direction: column; items-center;">
         <div style="
           width: 52px; height: 52px; 
           border-radius: 50%; 
-          border: 4px solid ${borderColor}; 
+          border: 4px solid \${borderColor}; 
           box-shadow: 0 8px 16px rgba(0,0,0,0.2);
           overflow: hidden; 
           background: white;
           position: relative;
           z-index: 2;
         ">
-          <img src="${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
+          <img src="\${avatarUrl}" style="width: 100%; height: 100%; object-fit: cover;" />
         </div>
         <div style="
           position: absolute;
@@ -48,11 +50,11 @@ function createAvatarIcon(avatarUrl: string, isOnline: boolean, themeColor: stri
           width: 0; height: 0; 
           border-left: 10px solid transparent; 
           border-right: 10px solid transparent; 
-          border-top: 14px solid ${borderColor};
+          border-top: 14px solid \${borderColor};
           z-index: 1;
         "></div>
       </div>
-    `
+    \`
   });
 }
 
@@ -88,8 +90,8 @@ export default function LocationMap() {
   const pTailwindBg = !isFemale ? 'bg-pink-500' : 'bg-cyan-500';
   const pTailwindText = !isFemale ? 'text-pink-500' : 'text-cyan-500';
 
-  const myAvatarUrl = userProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${userProfile?.id}`;
-  const partnerAvatarUrl = partnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile?.id}`;
+  const myAvatarUrl = userProfile?.avatar_url || \`https://api.dicebear.com/7.x/adventurer/svg?seed=\${userProfile?.id}\`;
+  const partnerAvatarUrl = partnerProfile?.avatar_url || \`https://api.dicebear.com/7.x/adventurer/svg?seed=\${partnerProfile?.id}\`;
 
   const myIcon = useMemo(() => createAvatarIcon(myAvatarUrl, true, myColor), [myAvatarUrl, myColor]);
   const partnerIcon = useMemo(() => createAvatarIcon(partnerAvatarUrl, isPartnerAppOnline, partnerColor), [partnerAvatarUrl, isPartnerAppOnline, partnerColor]);
@@ -163,7 +165,7 @@ export default function LocationMap() {
                         <span className="text-sm font-semibold text-gray-600 uppercase tracking-wider">Khoảng cách</span>
                     </div>
                     <div className="text-2xl font-black bg-clip-text text-transparent bg-gradient-to-r from-pink-500 to-cyan-500">
-                        {distanceKm < 1 ? `${Math.round(distanceKm * 1000)} m` : `${distanceKm.toFixed(1)} km`}
+                        {distanceKm < 1 ? \`\${Math.round(distanceKm * 1000)} m\` : \`\${distanceKm.toFixed(1)} km\`}
                     </div>
                 </div>
             )}
@@ -171,9 +173,9 @@ export default function LocationMap() {
             <div className="flex gap-4">
                 <button
                     onClick={() => setCentered('me')}
-                    className={`flex-1 relative overflow-hidden rounded-2xl p-3 flex flex-col items-center gap-2 transition-all active:scale-95 ${centered === 'me' ? `${myTailwindBg} text-white shadow-lg` : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                    className={\`flex-1 relative overflow-hidden rounded-2xl p-3 flex flex-col items-center gap-2 transition-all active:scale-95 \${centered === 'me' ? \`\${myTailwindBg} text-white shadow-lg\` : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}\`}
                 >
-                    <div className={`w-12 h-12 rounded-full p-1 bg-white shadow-sm`}>
+                    <div className={\`w-12 h-12 rounded-full p-1 bg-white shadow-sm\`}>
                         <img src={myAvatarUrl} className="w-full h-full rounded-full object-cover" />
                     </div>
                     <span className="font-bold text-sm">Tôi</span>
@@ -188,7 +190,7 @@ export default function LocationMap() {
                 <button
                     onClick={() => setCentered('partner')}
                     disabled={!partnerLocation}
-                    className={`flex-1 relative overflow-hidden rounded-2xl p-3 flex flex-col items-center gap-2 transition-all ${partnerLocation ? 'active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed'} ${centered === 'partner' ? `${pTailwindBg} text-white shadow-lg` : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}`}
+                    className={\`flex-1 relative overflow-hidden rounded-2xl p-3 flex flex-col items-center gap-2 transition-all \${partnerLocation ? 'active:scale-95 cursor-pointer' : 'opacity-50 cursor-not-allowed'} \${centered === 'partner' ? \`\${pTailwindBg} text-white shadow-lg\` : 'bg-gray-50 text-gray-700 hover:bg-gray-100'}\`}
                 >
                     <div className="w-12 h-12 rounded-full p-1 bg-white shadow-sm relative">
                         <img src={partnerAvatarUrl} className="w-full h-full rounded-full object-cover" />
@@ -213,3 +215,7 @@ export default function LocationMap() {
     </div>
   );
 }
+`;
+
+fs.writeFileSync('src/components/map/LocationMap.tsx', locationMapCode);
+console.log('LocationMap redesigned successfully');
