@@ -5,7 +5,7 @@ import { revalidatePath } from 'next/cache';
 
 async function getPartnerId(supabase: any, userId: string, requestedPartnerId?: string) {
   const { data: pairs } = await supabase
-    .from('pair_requests')
+    .from('friendships')
     .select('sender_id, receiver_id')
     .or(`sender_id.eq.${userId},receiver_id.eq.${userId}`)
     .eq('status', 'accepted')
@@ -28,7 +28,7 @@ export async function updateChatBackground(bgUrl: string, requestedPartnerId?: s
   if (!partnerId) return { error: 'Chưa ghép đôi' };
 
   const { error } = await supabase
-    .from('pair_requests')
+    .from('friendships')
     .update({ background_url: bgUrl })
     .or(`and(sender_id.eq.${user.id},receiver_id.eq.${partnerId}),and(sender_id.eq.${partnerId},receiver_id.eq.${user.id})`);
 
