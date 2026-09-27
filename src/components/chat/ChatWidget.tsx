@@ -2,22 +2,48 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { getMessages, sendMessage, updateChatBackground, updateMessageContent, deleteMessage, togglePinMessage } from '@/app/actions/chat';
-import { Send, ArrowLeft, Phone, Video, Info, UserPen, Palette, Search, Image as ImageIcon, X, Paperclip, Loader2, Check, CheckCheck, Trash, Pin, Reply, MoreVertical } from 'lucide-react';
+import { getMessages, sendMessage, searchMessages, updateChatBackground, updateMessageContent, deleteMessage, recallMessage, togglePinMessage } from '@/app/actions/chat';
+import { Send, ArrowLeft, Phone, Video, Info, UserPen, Palette, Search, Image as ImageIcon, X, Loader2, Check, CheckCheck, Trash, Pin, Reply } from 'lucide-react';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 
 const CallScreen = dynamic(() => import('./CallScreen'), { ssr: false });
 
+interface ChatProfile {
+  id?: string;
+  display_name?: string | null;
+  avatar_url?: string | null;
+  last_active?: string | null;
+  [key: string]: unknown;
+}
+
+interface ChatMessage {
+  id: string | number;
+  sender_id: string;
+  receiver_id?: string;
+  content: string;
+  image_url?: string | null;
+  is_moment?: boolean;
+  is_pinned?: boolean;
+  is_deleted?: boolean;
+  is_read?: boolean;
+  reactions?: Record<string, string> | null;
+  reply_to_id?: string | null;
+  replied_message?: ChatMessage | null;
+  created_at: string;
+  profiles?: ChatProfile | ChatProfile[] | null;
+  [key: string]: unknown;
+}
+
 interface ChatWidgetProps {
   onClose?: () => void;
   isPartnerOnline?: boolean;
-  partnerProfile?: any;
+  partnerProfile?: ChatProfile;
   chatBackgroundUrl?: string;
 }
 
-function formatLastActive(dateStr?: string) {
-  if (!dateStr) return 'Đang vắng mặt âª';
+function formatLastActive(dateStr?: string | null) {
+  if (!dateStr) return 'Chưa hoạt động gần đây';
   const diffMs = Date.now() - new Date(dateStr).getTime();
   const diffMins = Math.floor(diffMs / 60000);
   if (diffMins < 1) return 'Vừa mới truy cập';
@@ -28,34 +54,28 @@ function formatLastActive(dateStr?: string) {
   return `Vắng mặt ${diffDays} ngày`;
 }
 
-function MessageStatus({ msg, isPartnerOnline, partnerLastActive }: { msg: any, isPartnerOnline: boolean, partnerLastActive: string | undefined }) {
-  const [timePassed, setTimePassed] = React.useState(false);
+function MessageStatus({ msg }: { msg: ChatMessage }) {
+  const [elapsedMessageId, setElapsedMessageId] = React.useState<string | number | null>(null);
 
   React.useEffect(() => {
-    if (msg.id > 0) {
-      const sentTime = new Date(msg.created_at).getTime();
-      const diff = Date.now() - sentTime;
-      if (diff >= 2000) {
-        setTimePassed(true);
-      } else {
-        const timer = setTimeout(() => setTimePassed(true), 2000 - diff);
-        return () => clearTimeout(timer);
-      }
-    }
+    const remaining = Math.max(0, 2000 - (Date.now() - new Date(msg.created_at).getTime()));
+    const timer = setTimeout(() => setElapsedMessageId(msg.id), remaining);
+    return () => clearTimeout(timer);
   }, [msg.id, msg.created_at]);
+  const timePassed = elapsedMessageId === msg.id;
 
   let statusText = '';
   let Icon = null;
   let iconClass = '';
 
-  if (msg.id < 0) {
+  if (typeof msg.id === 'number' && msg.id < 0) {
     statusText = 'Đang gửi...';
     Icon = Loader2;
     iconClass = 'animate-spin';
   } else if (!timePassed) {
     statusText = 'Đã gửi';
     Icon = Check;
-  } else if (isPartnerOnline || (partnerLastActive && new Date(partnerLastActive) > new Date(msg.created_at))) {
+  } else if (msg.is_read) {
     statusText = 'Đã xem';
     Icon = CheckCheck;
     iconClass = 'text-pink-500';
@@ -74,7 +94,7 @@ function MessageStatus({ msg, isPartnerOnline, partnerLastActive }: { msg: any, 
 }
 
 export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline, partnerProfile, chatBackgroundUrl: initialBgUrl }: ChatWidgetProps) {
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -84,14 +104,19 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
   // Search state
   const [isSearching, setIsSearching] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<ChatMessage[]>([]);
+  const [isSearchLoading, setIsSearchLoading] = useState(false);
   const [showMediaSidebar, setShowMediaSidebar] = useState(false);
   const [viewingImage, setViewingImage] = useState<string | null>(null);
   const [localNickname, setLocalNickname] = useState('');
   useEffect(() => {
-    setLocalNickname(localStorage.getItem('partner_nickname') || '');
+    const timer = window.setTimeout(() => setLocalNickname(localStorage.getItem('partner_nickname') || ''), 0);
     const handleStorage = () => setLocalNickname(localStorage.getItem('partner_nickname') || '');
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
   
   // Background state
@@ -101,28 +126,66 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
   
   // Attachment state
   const [attachment, setAttachment] = useState<File | null>(null);
+  const [attachmentPreview, setAttachmentPreview] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
-  const [contextMenuFor, setContextMenuFor] = useState<string | null>(null);
-  const [replyingTo, setReplyingTo] = useState<any | null>(null);
+  const [contextMenuFor, setContextMenuFor] = useState<string | number | null>(null);
+  const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const attachInputRef = useRef<HTMLInputElement>(null);
 
-  const [livePartnerProfile, setLivePartnerProfile] = useState(partnerProfile);
+  const [livePartnerProfile, setLivePartnerProfile] = useState<ChatProfile | undefined>(partnerProfile);
   const [callMode, setCallMode] = useState<'audio' | 'video' | null>(null);
   const [callState, setCallState] = useState<'ringing' | 'connected' | null>(null);
-  const [activeCallId, setActiveCallId] = useState<number | null>(null);
+  const [activeCallId, setActiveCallId] = useState<string | number | null>(null);
   const [activeRoomId, setActiveRoomId] = useState<string | null>(null);
-  const [incomingCall, setIncomingCall] = useState<{ msgId: number; roomId: string; mode: 'audio' | 'video' } | null>(null);
+  const [incomingCall, setIncomingCall] = useState<{ msgId: string | number; roomId: string; mode: 'audio' | 'video' } | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
 
+  useEffect(() => () => {
+    if (attachmentPreview) URL.revokeObjectURL(attachmentPreview);
+  }, [attachmentPreview]);
+
+  useEffect(() => {
+    if (!viewingImage) return;
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setViewingImage(null);
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [viewingImage]);
+
+  useEffect(() => {
+    if (!isSearching || !searchQuery.trim()) return;
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const result = await searchMessages(searchQuery, livePartnerProfile?.id);
+      if (!cancelled) {
+        setSearchResults(result.messages || []);
+        setIsSearchLoading(false);
+      }
+    }, 250);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [isSearching, searchQuery, livePartnerProfile?.id]);
+
   useEffect(() => {
     const fetchInitial = async () => {
-      const res = await getMessages();
-      setMessages(res.messages || []);
+      const res = await getMessages(partnerProfile?.id);
+      const fetchedMessages = (res.messages || []) as unknown as Array<ChatMessage & { replied_message?: ChatMessage | ChatMessage[] | null }>;
+      setMessages(fetchedMessages.map(message => ({
+        ...message,
+        replied_message: Array.isArray(message.replied_message) ? message.replied_message[0] || null : message.replied_message,
+      })));
       setCurrentUserId(res.userId || null);
       setLoading(false);
       scrollToBottom();
+
+      if (res.userId && res.partnerId) {
+        await supabase.from('messages').update({ is_read: true }).eq('sender_id', res.partnerId).eq('receiver_id', res.userId).eq('is_read', false);
+      }
 
       if (partnerProfile?.id) {
         const { data } = await supabase.from('profiles').select('*').eq('id', partnerProfile.id).single();
@@ -136,8 +199,16 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        async (payload) => {
-          const newMsg = payload.new as any;
+        async (payload: { new: Record<string, unknown> }) => {
+          const newMsg = payload.new as unknown as ChatMessage;
+          const belongsToActiveConversation =
+            (newMsg.sender_id === currentUserId && newMsg.receiver_id === partnerProfile?.id) ||
+            (newMsg.sender_id === partnerProfile?.id && newMsg.receiver_id === currentUserId);
+          if (!belongsToActiveConversation) return;
+
+          if (newMsg.sender_id === partnerProfile?.id && newMsg.receiver_id === currentUserId && !newMsg.is_read) {
+            await supabase.from('messages').update({ is_read: true }).eq('id', newMsg.id);
+          }
           
           // Gắn profile cục bộ thay vì gọi getMessages() (bỏ qua Server Action)
           let profile = null;
@@ -146,11 +217,11 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
           } else {
             profile = { display_name: partnerProfile?.display_name || 'Người ấy', avatar_url: partnerProfile?.avatar_url || null };
           }
-          newMsg.profiles = profile; if (newMsg.reply_to_id) { const { data: replied } = await supabase.from('messages').select('id, content, image_url, sender_id').eq('id', newMsg.reply_to_id).single(); newMsg.replied_message = replied; }
+          newMsg.profiles = profile; if (newMsg.reply_to_id) { const { data: replied } = await supabase.from('messages').select('id, content, image_url, sender_id, is_deleted').eq('id', newMsg.reply_to_id).single(); newMsg.replied_message = replied; }
 
           setMessages(prev => {
             // Xóa tin nhắn ảo (optimistic) có cùng nội dung (id âm)
-            const filtered = prev.filter(m => !(m.id < 0 && m.content === newMsg.content));
+            const filtered = prev.filter(m => !(typeof m.id === 'number' && m.id < 0 && m.content === newMsg.content));
             if (filtered.some(m => m.id === newMsg.id)) return filtered;
             return [...filtered, newMsg];
           });
@@ -168,15 +239,19 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       .on(
         'postgres_changes',
         { event: 'UPDATE', schema: 'public', table: 'messages' },
-        async (payload) => {
-          const updatedMsg = payload.new as any;
+        async (payload: { new: Record<string, unknown> }) => {
+          const updatedMsg = payload.new as unknown as ChatMessage;
+          const belongsToActiveConversation =
+            (updatedMsg.sender_id === currentUserId && updatedMsg.receiver_id === partnerProfile?.id) ||
+            (updatedMsg.sender_id === partnerProfile?.id && updatedMsg.receiver_id === currentUserId);
+          if (!belongsToActiveConversation) return;
           setMessages((prev) => prev.map(m => m.id === updatedMsg.id ? { ...m, ...updatedMsg } : m));
         }
       )
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
-  }, [supabase]);
+  }, [supabase, currentUserId, partnerProfile?.id, partnerProfile?.display_name, partnerProfile?.avatar_url]);
 
   useEffect(() => {
     if (!currentUserId || !livePartnerProfile?.id) return;
@@ -185,35 +260,45 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     };
     updateLastActive();
     const activeInterval = setInterval(updateLastActive, 180000);
+    const profileInterval = setInterval(async () => {
+      const { data } = await supabase.from('profiles').select('last_active, display_name, avatar_url').eq('id', livePartnerProfile.id).single();
+      if (data) setLivePartnerProfile((current) => ({ ...current, ...data }));
+    }, 60000);
 
     const room = supabase.channel('couple_room');
     room.on('presence', { event: 'sync' }, () => {
       const state = room.presenceState();
-      const partnerIsHere = Object.values(state).some(
-        presences => presences.some((p: any) => p.user_id === livePartnerProfile.id)
+      const partnerIsHere = Object.values(state as Record<string, Array<{ user_id?: string }>>).some(
+        presences => presences.some(p => p.user_id === livePartnerProfile.id)
       );
       setRealIsPartnerOnline(partnerIsHere);
-    }).subscribe(async (status) => {
+    }).subscribe(async (status: 'SUBSCRIBED' | 'TIMED_OUT' | 'CLOSED' | 'CHANNEL_ERROR') => {
       if (status === 'SUBSCRIBED') await room.track({ user_id: currentUserId });
     });
 
     return () => {
       clearInterval(activeInterval);
+      clearInterval(profileInterval);
       supabase.removeChannel(room);
     };
   }, [currentUserId, livePartnerProfile, supabase]);
 
   const isPartnerOnline = externalIsOnline !== undefined ? externalIsOnline : realIsPartnerOnline;
 
-  const scrollToBottom = () => {
+  function scrollToBottom() {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
-  };
+  }
 
   const handleBgUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || !e.target.files[0]) return;
     const file = e.target.files[0];
+    if (!file.type.startsWith('image/') || file.size > 10 * 1024 * 1024) {
+      alert('Vui lòng chọn ảnh có dung lượng dưới 10 MB.');
+      e.target.value = '';
+      return;
+    }
     setIsUploadingBg(true);
     
     const fileExt = file.name.split('.').pop();
@@ -233,14 +318,29 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     const newUrl = bgUrlData.publicUrl;
     
     setChatBackgroundUrl(newUrl);
-    await updateChatBackground(newUrl);
+    const result = await updateChatBackground(newUrl, livePartnerProfile?.id);
+    if (result.error) {
+      setChatBackgroundUrl(initialBgUrl || '');
+      alert(result.error);
+    }
     setIsUploadingBg(false);
   };
 
   const handleAttachChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setAttachment(e.target.files[0]);
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      alert('Vui lòng chọn tệp hình ảnh.');
+      e.target.value = '';
+      return;
     }
+    if (file.size > 10 * 1024 * 1024) {
+      alert('Ảnh cần nhỏ hơn 10 MB để gửi ổn định trên điện thoại.');
+      e.target.value = '';
+      return;
+    }
+    setAttachmentPreview(URL.createObjectURL(file));
+    setAttachment(file);
   };
 
   const startCall = async (mode: 'audio' | 'video') => {
@@ -264,7 +364,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     }
   };
 
-  const handleJoinCall = async (msgId: number, roomId: string, mode: 'audio' | 'video') => {
+  const handleJoinCall = async (msgId: string | number, roomId: string, mode: 'audio' | 'video') => {
     setCallMode(mode);
     setCallState('connected');
     setActiveCallId(msgId);
@@ -273,7 +373,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
     await supabase.from('messages').update({ content: `CALL::${roomId}::ACCEPTED::${mode}` }).eq('id', msgId);
   };
 
-  const handleRejectCall = async (msgId: number, roomId: string, mode: 'audio' | 'video') => {
+  const handleRejectCall = async (msgId: string | number, roomId: string, mode: 'audio' | 'video') => {
     setIncomingCall(null);
     await supabase.from('messages').update({ content: `CALL::${roomId}::REJECTED::${mode}` }).eq('id', msgId);
   };
@@ -326,50 +426,61 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!inputValue.trim() && !attachment) return;
-    
-    const text = inputValue.trim();
-    setInputValue('');
-    let uploadedImageUrl = '';
-    
-    // 1. Optimistic UI: Hiển thị ngay lập tức trên màn hình
-    const tempId = -Date.now();
-    if (!attachment) {
-      const tempMsg = {
-        id: tempId,
-        sender_id: currentUserId,
-        receiver_id: livePartnerProfile!.id,
-        content: text,
-        image_url: null,
-        created_at: new Date().toISOString(),
-        profiles: { display_name: 'Bạn', avatar_url: null }
-      };
-      setMessages(prev => [...prev, tempMsg as any]);
-      setTimeout(scrollToBottom, 50);
-    }
+    if (!currentUserId || !livePartnerProfile?.id) return;
 
+    const text = inputValue.trim();
+    const selectedFile = attachment;
+    const reply = replyingTo;
+    setInputValue('');
+    setReplyingTo(null);
+    const tempId = -Date.now();
     setIsSending(true);
 
-    if (attachment) {
-      const fileExt = attachment.name.split('.').pop();
-      const fileName = `chat-${currentUserId}-${Date.now()}.${fileExt}`;
-      const { error } = await supabase.storage.from('avatars').upload(fileName, attachment, { upsert: true });
-      if (!error) {
-        const { data } = supabase.storage.from('avatars').getPublicUrl(fileName);
-        uploadedImageUrl = data.publicUrl;
+    let uploadedImageUrl: string | undefined;
+    let uploadedFilePath: string | undefined;
+    if (selectedFile) {
+      const safeName = selectedFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      const fileName = `chat/${currentUserId}/${Date.now()}-${safeName}`;
+      uploadedFilePath = fileName;
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(fileName, selectedFile, { upsert: false, contentType: selectedFile.type });
+      if (uploadError) {
+        alert('Không tải được ảnh: ' + uploadError.message);
+        setIsSending(false);
+        return;
       }
-      setAttachment(null);
+      uploadedImageUrl = supabase.storage.from('avatars').getPublicUrl(fileName).data.publicUrl;
     }
-    
-    const { error } = await supabase.from('messages').insert({ 
-      sender_id: currentUserId, 
-      receiver_id: livePartnerProfile!.id, 
-      content: text, 
-      image_url: uploadedImageUrl || null 
-    });
-    
-    if (error) {
-      alert('Lỗi gửi tin nhắn: ' + error.message);
-      setMessages(prev => prev.filter(m => m.id !== tempId)); // Xóa tin nhắn ảo nếu lỗi
+
+    const optimisticMessage = {
+      id: tempId,
+      sender_id: currentUserId,
+      receiver_id: livePartnerProfile.id,
+      content: text,
+      image_url: uploadedImageUrl || null,
+      reply_to_id: reply?.id ? String(reply.id) : null,
+      replied_message: reply,
+      created_at: new Date().toISOString(),
+      profiles: { display_name: 'Bạn', avatar_url: null },
+    };
+    setMessages(prev => [...prev, optimisticMessage]);
+    setTimeout(scrollToBottom, 50);
+
+    const result = await sendMessage(text, uploadedImageUrl, reply?.id ? String(reply.id) : null, livePartnerProfile.id);
+    if (result.error || !result.message) {
+      alert('Lỗi gửi tin nhắn: ' + (result.error || 'Không nhận được phản hồi từ máy chủ.'));
+      setMessages(prev => prev.filter(m => m.id !== tempId));
+      if (uploadedFilePath) await supabase.storage.from('avatars').remove([uploadedFilePath]);
+      setInputValue(text);
+    } else {
+      setAttachment(null);
+      setAttachmentPreview(null);
+      setMessages(prev => {
+        const withoutTemp = prev.filter(m => m.id !== tempId);
+        if (withoutTemp.some(m => m.id === result.message.id)) return withoutTemp;
+        return [...withoutTemp, { ...result.message, replied_message: reply }];
+      });
     }
     setIsSending(false);
     scrollToBottom();
@@ -377,19 +488,51 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
 
   const displayedMessages = messages;
   const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
-
-  const searchResults = isSearching && searchQuery.trim() 
-    ? messages.filter(m => m.content?.toLowerCase().includes(searchQuery.toLowerCase()))
-    : [];
-
-  const scrollToMessage = (id: string) => {
-    const el = document.getElementById('msg-' + id);
-    if (el) {
-      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const scrollToMessage = (message: ChatMessage) => {
+    const id = String(message.id);
+    if (!messages.some(item => String(item.id) === id)) {
+      setMessages(prev => [...prev, message].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()));
+    }
+    window.setTimeout(() => {
+      document.getElementById('msg-' + id)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       setHighlightedMsgId(id);
       setIsSearching(false);
-      setTimeout(() => setHighlightedMsgId(null), 3000); // clear highlight after 3s
+      window.setTimeout(() => setHighlightedMsgId(null), 3000);
+    }, 50);
+  };
+
+  const handleMessageAction = async (action: 'reply' | 'pin' | 'delete' | 'recall' | 'edit', msg: ChatMessage) => {
+    setContextMenuFor(null);
+    if (action === 'reply') {
+      setReplyingTo(msg);
+      document.getElementById('chat-input')?.focus();
+      return;
     }
+    if (action === 'edit') {
+      const updated = window.prompt('Chỉnh sửa tin nhắn:', msg.content || '');
+      if (updated === null || updated.trim() === msg.content) return;
+      const result = await updateMessageContent(String(msg.id), updated, livePartnerProfile?.id);
+      if (result.error) alert(result.error);
+      else setMessages(prev => prev.map(item => item.id === msg.id ? { ...item, content: updated.trim() } : item));
+      return;
+    }
+    if (action === 'pin') {
+      const result = await togglePinMessage(String(msg.id), Boolean(msg.is_pinned), livePartnerProfile?.id);
+      if (result.error) alert(result.error);
+      else setMessages(prev => prev.map(item => item.id === msg.id ? { ...item, is_pinned: !msg.is_pinned } : item));
+      return;
+    }
+    if (action === 'recall') {
+      if (!window.confirm('Thu hồi tin nhắn này cho cả hai người?')) return;
+      const result = await recallMessage(String(msg.id), livePartnerProfile?.id);
+      if (result.error) alert(result.error);
+      else setMessages(prev => prev.map(item => item.id === msg.id ? { ...item, content: '', image_url: null, is_deleted: true } : item));
+      return;
+    }
+    if (!window.confirm('Xóa vĩnh viễn tin nhắn này khỏi cuộc trò chuyện?')) return;
+    const result = await deleteMessage(String(msg.id), livePartnerProfile?.id);
+    if (result.error) alert(result.error);
+    else setMessages(prev => prev.filter(item => item.id !== msg.id));
   };
 
   return (
@@ -412,7 +555,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         </div>
       )}
 
-      {/* đŸ“ POPUP CUỘC GỌI ĐẾN (hiện khi có người gọi) */}
+      {/* Popup cuộc gọi đến */}
       {incomingCall && !callState && (
         <div className="fixed inset-0 z-[999] bg-gradient-to-b from-pink-700 to-pink-950 flex flex-col items-center justify-center text-white">
           <img 
@@ -453,7 +596,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
         <CallScreen 
           roomName={activeRoomId}
           userId={currentUserId.replace(/-/g, '')}
-          userName="Ban"
+          userName="Bạn"
           isVideoCall={callMode === 'video'}
           onClose={handleLeaveCall} 
         />
@@ -462,7 +605,7 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
       {/* MAIN CHAT AREA */}
       <div className="flex-1 flex flex-col min-w-0 relative h-full">
         {/* Header */}
-        <div className="flex flex-col border-b border-pink-100 bg-[#fdf2f8]/95 backdrop-blur-md shadow-sm z-20">
+        <div className="relative flex flex-col border-b border-pink-100 bg-[#fdf2f8]/95 backdrop-blur-md shadow-sm z-20">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center gap-3">
               {!onClose && (
@@ -500,23 +643,33 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                   autoFocus
                   type="text" 
                   value={searchQuery}
-                  onChange={e => setSearchQuery(e.target.value)}
+                  onChange={e => {
+                    const value = e.target.value;
+                    setSearchResults([]);
+                    setIsSearchLoading(Boolean(value.trim()));
+                    setSearchQuery(value);
+                  }}
                   placeholder="Tìm kiếm trong đoạn chat..." 
                   className="w-full pl-9 pr-4 py-1.5 bg-gray-100 rounded-full text-sm focus:outline-none focus:ring-1 focus:ring-pink-400"
                 />
-              
               </div>
-              {searchResults.length > 0 && (
-                <div className="absolute top-16 left-4 right-4 bg-white/95 backdrop-blur-md shadow-xl rounded-xl border border-gray-100 z-50 max-h-64 overflow-y-auto divide-y divide-gray-100">
-                  {searchResults.map(m => (
-                    <button key={m.id} onClick={() => scrollToMessage(m.id)} className="w-full text-left p-3 hover:bg-pink-50 transition-colors flex flex-col gap-1">
+              <button type="button" aria-label="Đóng tìm kiếm" onClick={() => { setIsSearching(false); setSearchQuery(''); setSearchResults([]); setIsSearchLoading(false); }} className="p-2 text-gray-500 hover:bg-pink-50 rounded-full">
+                <X size={18} />
+              </button>
+              {searchQuery.trim() && (
+                <div className="absolute top-full left-4 right-4 mt-1 bg-white/95 backdrop-blur-md shadow-xl rounded-xl border border-gray-100 z-50 max-h-72 overflow-y-auto divide-y divide-gray-100">
+                  {isSearchLoading ? (
+                    <p className="p-4 text-sm text-center text-gray-500">Đang tìm kiếm...</p>
+                  ) : searchResults.length ? searchResults.map(m => (
+                    <button key={m.id} onClick={() => scrollToMessage(m)} className="w-full text-left p-3 hover:bg-pink-50 transition-colors flex flex-col gap-1">
                       <span className="text-xs font-bold text-gray-500">{new Date(m.created_at).toLocaleString('vi-VN', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                      <span className="text-sm text-gray-800 line-clamp-2">{m.content}</span>
+                      <span className="text-sm text-gray-800 line-clamp-2">{m.content || (m.image_url ? 'Ảnh đã gửi' : '')}</span>
                     </button>
-                  ))}
+                  )) : <p className="p-4 text-sm text-center text-gray-500">Không tìm thấy tin nhắn phù hợp.</p>}
                 </div>
               )}
-            )}
+            </div>
+          )}
         </div>
 
         {/* Message List */}
@@ -532,12 +685,12 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
             } : {})
           }}
         >
-          {messages.filter(m => m.is_pinned).length > 0 && (
+          {messages.filter(m => m.is_pinned && !m.is_deleted).length > 0 && (
             <div className="sticky top-0 z-40 bg-white/90 backdrop-blur-md shadow-sm border-b border-pink-100/50 -mx-4 -mt-4 px-4 py-2 mb-4">
               <div className="flex items-start gap-2">
                 <Pin size={14} className="text-pink-500 mt-1 flex-shrink-0" />
                 <div className="flex-1 overflow-x-auto flex gap-3 no-scrollbar pb-1">
-                  {messages.filter(m => m.is_pinned).map(pinned => (
+                  {messages.filter(m => m.is_pinned && !m.is_deleted).map(pinned => (
                     <div 
                       key={pinned.id} 
                       onClick={() => {
@@ -546,8 +699,8 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                       }}
                       className="bg-pink-50 rounded-lg p-2 min-w-[200px] max-w-[250px] cursor-pointer hover:bg-pink-100 transition-colors flex-shrink-0 border border-pink-100/50"
                     >
-                      <p className="text-[10px] font-bold text-pink-600 truncate">{pinned.sender_id === user.id ? 'Bạn' : ((localNickname || livePartnerProfile?.display_name || 'Người ấy'))}</p>
-                      <p className="text-xs text-gray-700 truncate">{pinned.content || 'Hình ảnh'}</p>
+                      <p className="text-[10px] font-bold text-pink-600 truncate">{pinned.sender_id === currentUserId ? 'Bạn' : ((localNickname || livePartnerProfile?.display_name || 'Người ấy'))}</p>
+                      <p className="text-xs text-gray-700 truncate">{pinned.is_deleted ? 'Tin nhắn đã được thu hồi' : pinned.content || 'Hình ảnh'}</p>
                     </div>
                   ))}
                 </div>
@@ -606,7 +759,9 @@ export default function ChatWidget({ onClose, isPartnerOnline: externalIsOnline,
                         <img src={avatarUrl} alt="avatar" className="w-8 h-8 rounded-full border border-teal-200 shadow-sm flex-shrink-0 object-cover mt-auto mb-1" />
                       )}
                       <div className={`flex flex-col ${isMe ? 'items-end' : 'items-start'} max-w-[75%]`}>
-                        {(() => {
+                        {msg.is_deleted ? (
+                          <div className="rounded-2xl bg-gray-100 px-3 py-2 text-sm italic text-gray-500">Tin nhắn đã được thu hồi</div>
+                        ) : (() => {
   const isImageOnly = msg.image_url && (!msg.content || msg.content === '📸 Vừa chia sẻ một khoảnh khắc') && !msg.replied_message && !msg.content?.startsWith('CALL::');
   return (
     <div 
@@ -623,15 +778,17 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
                                   {msg.replied_message.sender_id === currentUserId ? 'Bạn' : 'Người ấy'}
                                 </span>
                                 {msg.replied_message.image_url && (
-                                  <img src={msg.replied_message.image_url} className="w-full max-w-[120px] rounded-lg mb-1 object-cover" />
+                                  <img src={msg.replied_message.image_url || ''} alt="Ảnh trong tin nhắn được trả lời" className="w-full max-w-[120px] rounded-lg mb-1 object-cover" />
                                 )}
-                                <p className="opacity-90 line-clamp-2">{msg.replied_message.content}</p>
+                                <p className="opacity-90 line-clamp-2">{msg.replied_message.is_deleted ? 'Tin nhắn đã được thu hồi' : msg.replied_message.content}</p>
                               </div>
                             )}
 
                             {msg.image_url && (
                               <div className="relative">
-                                <img src={msg.image_url} alt="attachment" className="rounded-xl mb-2 max-w-full h-auto max-h-64 object-contain bg-black/5" />
+                                <button type="button" onClick={(e) => { e.stopPropagation(); setViewingImage(msg.image_url || null); }} className="block cursor-zoom-in" aria-label="Xem ảnh đã gửi">
+                                  <img src={msg.image_url || ''} alt="Ảnh đã gửi" className="rounded-xl mb-2 max-w-full h-auto max-h-64 object-contain bg-black/5" />
+                                </button>
                                 {msg.is_moment && (
                                   <div className="absolute top-2 left-2 bg-pink-500 text-white text-[10px] font-bold px-2 py-1 rounded-full shadow-md backdrop-blur-md">Khoảnh khắc (Locket)</div>
                                 )}
@@ -683,7 +840,7 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
                                  {displayStatus === 'ACCEPTED' && (
                                    <div className="flex gap-2 mt-3">
                                      <button onClick={() => {
-                                       setCallMode(mode as any);
+                                       setCallMode(mode as 'audio' | 'video');
                                        setActiveCallId(msg.id);
                                        setActiveRoomId(roomId);
                                      }} className="flex-1 bg-green-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-green-600 transition-transform active:scale-95">
@@ -693,8 +850,8 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
                                  )}
                                  {displayStatus === 'RINGING' && !isMe && (
                                    <div className="flex gap-2 mt-3">
-                                     <button onClick={() => handleJoinCall(msg.id, roomId, mode as any)} className="flex-1 bg-green-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-green-600 transition-transform active:scale-95">Nghe máy</button>
-                                     <button onClick={() => handleRejectCall(msg.id, roomId, mode as any)} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Từ chối</button>
+                                     <button onClick={() => handleJoinCall(msg.id, roomId, mode as 'audio' | 'video')} className="flex-1 bg-green-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-green-600 transition-transform active:scale-95">Nghe máy</button>
+                                     <button onClick={() => handleRejectCall(msg.id, roomId, mode as 'audio' | 'video')} className="flex-1 bg-red-500 text-white py-2 rounded-full font-bold shadow-md hover:bg-red-600 transition-transform active:scale-95">Từ chối</button>
                                    </div>
                                  )}
                                  {displayStatus === 'RINGING' && isMe && (
@@ -729,7 +886,7 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
                           </div>
                           
                           {/* Context Menu */}
-                          {contextMenuFor === msg.id && (
+                          {contextMenuFor === msg.id && !msg.is_deleted && (
                             <div className={`absolute top-full mt-1 ${isMe ? 'right-0' : 'left-0'} z-50 w-36 bg-white rounded-xl shadow-xl border border-gray-100 overflow-hidden animate-in fade-in zoom-in-95`}>
                               <button onClick={(e) => { e.stopPropagation(); handleMessageAction('reply', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 border-b border-gray-50">
                                 <Reply size={16} /> Trả lời
@@ -738,9 +895,21 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
                                 <Pin size={16} /> {msg.is_pinned ? 'Bỏ ghim' : 'Ghim'}
                               </button>
                               {isMe && (
-                                <button onClick={(e) => { e.stopPropagation(); handleMessageAction('delete', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
-                                  <Trash size={16} /> Xóa
-                                </button>
+                                <>
+                                  {!msg.image_url && !msg.content?.startsWith('CALL::') && (
+                                    <button onClick={(e) => { e.stopPropagation(); handleMessageAction('edit', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 border-b border-gray-50">
+                                      Chỉnh sửa
+                                    </button>
+                                  )}
+                                  {!msg.content?.startsWith('CALL::') && (
+                                    <button onClick={(e) => { e.stopPropagation(); handleMessageAction('recall', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 border-b border-gray-50">
+                                      Thu hồi (15 phút)
+                                    </button>
+                                  )}
+                                  <button onClick={(e) => { e.stopPropagation(); handleMessageAction('delete', msg); }} className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2">
+                                    <Trash size={16} /> Xóa vĩnh viễn
+                                  </button>
+                                </>
                               )}
                             </div>
                           )}
@@ -750,11 +919,7 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
 
                         {/* Message Status */}
                         {isMe && isLastMessage && (
-                          <MessageStatus 
-                            msg={msg} 
-                            isPartnerOnline={isPartnerOnline} 
-                            partnerLastActive={livePartnerProfile?.last_active} 
-                          />
+                          <MessageStatus msg={msg} />
                         )}
                       </div>
                     </div>
@@ -769,14 +934,10 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
         {attachment && (
           <div className="px-4 py-3 bg-gray-50 border-t border-pink-100 flex items-center justify-between z-20 relative">
             <div className="flex items-center gap-3">
-              <img src={URL.createObjectURL(attachment)} alt="preview" className="w-16 h-16 object-cover rounded-lg border shadow-sm" />
+              {attachmentPreview && <img src={attachmentPreview} alt="Xem trước ảnh" className="w-16 h-16 object-cover rounded-lg border shadow-sm" />}
               <span className="text-sm font-medium text-gray-700 truncate max-w-[150px]">{attachment.name}</span>
             </div>
-            <button onClick={() => setAttachment(null)} className="p-2 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm border">
-              <X size={16} />
-            </button>
-          </div>
-        )} className="text-gray-400 hover:text-red-500">
+            <button onClick={() => { setAttachment(null); setAttachmentPreview(null); }} className="p-2 bg-white rounded-full text-gray-400 hover:text-red-500 shadow-sm border">
               <X size={16} />
             </button>
           </div>
@@ -786,8 +947,8 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
         {replyingTo && (
           <div className="px-4 py-2 bg-pink-50 border-t border-pink-100 flex items-center justify-between z-20">
             <div className="flex flex-col max-w-[80%]">
-              <span className="text-xs font-bold text-pink-600">Đang trả lời {replyingTo.sender_id === user.id ? 'chính bạn' : (livePartnerProfile?.display_name || 'người ấy')}</span>
-              <span className="text-xs text-gray-600 truncate">{replyingTo.content || 'Hình ảnh / Tệp'}</span>
+              <span className="text-xs font-bold text-pink-600">Đang trả lời {replyingTo.sender_id === currentUserId ? 'chính bạn' : (livePartnerProfile?.display_name || 'người ấy')}</span>
+              <span className="text-xs text-gray-600 truncate">{replyingTo.is_deleted ? 'Tin nhắn đã được thu hồi' : replyingTo.content || 'Hình ảnh / Tệp'}</span>
             </div>
             <button onClick={() => setReplyingTo(null)} className="p-1 text-gray-400 hover:text-pink-600 rounded-full hover:bg-white transition-colors">
               <X size={16} />
@@ -828,7 +989,7 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
       {isInfoOpen && (
         <>
         <div className="md:hidden absolute inset-0 bg-black/20 z-20" onClick={() => setIsInfoOpen(false)}></div>
-        <div className="absolute inset-y-0 right-0 w-80 md:relative md:w-80 border-l border-pink-100 bg-white flex flex-col flex-shrink-0 z-30 shadow-2xl md:shadow-[-4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto transform transition-transform duration-300">
+        <div className="absolute inset-y-0 right-0 w-[min(20rem,90vw)] md:relative md:w-80 border-l border-pink-100 bg-white flex flex-col flex-shrink-0 z-30 shadow-2xl md:shadow-[-4px_0_15px_rgba(0,0,0,0.02)] overflow-y-auto transform transition-transform duration-300">
           <button onClick={() => setIsInfoOpen(false)} className="md:hidden absolute top-4 right-4 p-2 bg-pink-50 text-pink-500 rounded-full z-40 hover:bg-pink-100">
             <X size={20} />
           </button>
@@ -855,7 +1016,9 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
               </div>
               <div className="flex-1 overflow-y-auto p-2 grid grid-cols-3 gap-1">
                 {messages.filter(m => m.image_url).map(m => (
-                  <img key={m.id} onClick={() => setViewingImage(m.image_url)} src={m.image_url} className="w-full aspect-square object-cover rounded cursor-pointer hover:opacity-80" />
+                  <button key={m.id} type="button" onClick={() => setViewingImage(m.image_url || null)} className="block overflow-hidden rounded focus:outline-none focus:ring-2 focus:ring-pink-400" aria-label="Xem ảnh đã gửi">
+                    <img alt="Ảnh đã gửi" src={m.image_url || ''} className="w-full aspect-square object-cover cursor-pointer hover:opacity-80" />
+                  </button>
                 ))}
               </div>
             </div>
@@ -882,11 +1045,11 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
             <button onClick={() => bgInputRef.current?.click()} disabled={isUploadingBg} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group disabled:opacity-50">
               <div className="flex items-center gap-3">
                 {isUploadingBg ? <Loader2 size={18} className="text-pink-500 animate-spin" /> : <Palette size={18} className="text-pink-500" />}
-                <span className="font-medium text-sm">{isUploadingBg ? 'Đang tải...' : 'Äá»•i hình nền chat'}</span>
+                <span className="font-medium text-sm">{isUploadingBg ? 'Đang tải...' : 'Đổi hình nền chat'}</span>
               </div>
             </button>
 
-            <button onClick={() => setIsSearching(!isSearching)} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
+            <button onClick={() => { setIsSearching(!isSearching); setSearchQuery(''); setSearchResults([]); setIsSearchLoading(false); }} className="w-full flex items-center justify-between p-3 rounded-xl hover:bg-pink-50 text-gray-700 transition-colors group">
               <div className="flex items-center gap-3">
                 <Search size={18} className="text-gray-500" />
                 <span className="font-medium text-sm">Tìm kiếm tin nhắn</span>
@@ -902,10 +1065,20 @@ className={`whitespace-pre-wrap word-break flex flex-col relative group cursor-p
               </div>
             </button>
           </div>
+          )}
         </div>
         </>
       )}
     </div>
+    {viewingImage && (
+      <div className="fixed inset-0 z-[1200] flex items-center justify-center bg-black/90 p-3 sm:p-8" role="dialog" aria-modal="true" aria-label="Xem ảnh">
+        <button type="button" className="absolute inset-0 cursor-default" onClick={() => setViewingImage(null)} aria-label="Đóng trình xem ảnh" />
+        <button type="button" onClick={() => setViewingImage(null)} className="absolute right-4 top-4 z-20 rounded-full bg-white/15 p-3 text-white hover:bg-white/25" aria-label="Đóng ảnh">
+          <X size={24} />
+        </button>
+        <img src={viewingImage} alt="Ảnh trong cuộc trò chuyện" onClick={(e) => e.stopPropagation()} className="relative z-10 max-h-[90dvh] max-w-full rounded-lg object-contain shadow-2xl" />
+      </div>
+    )}
     </>
   );
 }

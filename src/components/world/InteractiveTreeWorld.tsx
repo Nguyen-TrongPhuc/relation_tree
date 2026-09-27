@@ -62,10 +62,12 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
   useEffect(() => {
     // 0. Fetch freshest profiles
     const fetchProfiles = async () => {
-      const { data } = await supabase.from('profiles').select('*').in('id', [userProfile.id, partnerProfile.id]);
+      const ids = [userProfile?.id];
+      if (partnerProfile?.id) ids.push(partnerProfile.id);
+      const { data } = await supabase.from('profiles').select('*').in('id', ids);
       if (data) {
         const u = data.find((p: any) => p.id === userProfile.id);
-        const p = data.find((p: any) => p.id === partnerProfile.id);
+        const p = partnerProfile?.id ? data.find((p: any) => p.id === partnerProfile.id) : null;
         if (u) setLiveUserProfile(u);
         if (p) setLivePartnerProfile(p);
       }
@@ -76,7 +78,7 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
       .channel('public:profiles_tree')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles' }, (payload) => {
         if (payload.new.id === userProfile.id) setLiveUserProfile(payload.new);
-        if (payload.new.id === partnerProfile.id) setLivePartnerProfile(payload.new);
+        if (partnerProfile?.id && payload.new.id === partnerProfile.id) setLivePartnerProfile(payload.new);
       })
       .subscribe();
 
@@ -106,7 +108,7 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
       const state = room.presenceState();
       // Kiểm tra xem ID của người yêu có đang trong danh sách online không
       const partnerIsHere = Object.values(state).some(
-        presences => presences.some((p: any) => p.user_id === partnerProfile.id)
+        presences => partnerProfile?.id && presences.some((p: any) => p.user_id === partnerProfile.id)
       );
       setIsPartnerOnline(partnerIsHere);
     }).subscribe(async (status) => {
@@ -144,14 +146,14 @@ export default function InteractiveTreeWorld({ rawDailyData, events, startDate, 
             
             <div className="flex flex-col items-center relative">
               <img 
-                src={livePartnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile.id}`} 
+                src={livePartnerProfile?.avatar_url || `https://api.dicebear.com/7.x/adventurer/svg?seed=${partnerProfile?.id || 'partner'}`} 
                 alt="Partner" 
                 className={`w-8 h-8 rounded-full border-2 object-cover ${isPartnerOnline ? 'border-green-400' : 'border-pink-200'}`}
               />
               {isPartnerOnline && (
                 <span className="absolute top-0 right-0 w-2.5 h-2.5 bg-green-500 border border-white rounded-full"></span>
               )}
-              <span className="text-[9px] font-bold text-pink-800 mt-1 max-w-[60px] truncate">{partnerProfile.display_name}</span>
+              <span className="text-[9px] font-bold text-pink-800 mt-1 max-w-[60px] truncate">{partnerProfile?.display_name || 'Người ấy'}</span>
             </div>
           </div>
         )}
