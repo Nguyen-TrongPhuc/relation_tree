@@ -4,6 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Smile, Loader2, Send, Clock, Grid } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
 import FloatingReactions, { FloatingReactionsRef } from '@/components/locket/FloatingReactions';
+import LiveCameraModal from '@/components/locket/LiveCameraModal';
+import PreviewModal from '@/components/locket/PreviewModal';
 import Link from 'next/link';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
