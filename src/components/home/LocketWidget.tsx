@@ -3,8 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Camera, Smile, Loader2, Send, Clock, Grid } from 'lucide-react';
 import { createClient } from '@/lib/supabase/client';
-import LiveCameraModal from '@/components/locket/LiveCameraModal';
-import PreviewModal from '../locket/PreviewModal';
+import FloatingReactions, { FloatingReactionsRef } from '@/components/locket/FloatingReactions';
 import Link from 'next/link';
 
 const EMOJIS = ['❤️', '😂', '😮', '😢', '😍', '🔥'];
@@ -24,6 +23,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
   const fileInputRef = useRef<HTMLInputElement>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const supabase = createClient();
+  const reactionsRef = useRef<FloatingReactionsRef>(null);
 
   useEffect(() => {
     fetchMoments();
@@ -68,7 +68,10 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
     }
   };
 
-  const handleReact = async (emoji: string) => {
+  const handleReact = async (emoji: string, e?: React.MouseEvent) => {
+    if (e && reactionsRef.current) {
+      reactionsRef.current.triggerReaction(emoji, e.clientX, e.clientY);
+    }
     const currentMoment = moments[currentIndex];
     if (!currentMoment) return;
     
@@ -140,7 +143,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
 
       
 
-      <div className="relative w-full aspect-[3/4] max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
+      <div className="relative w-full aspect-square max-w-[320px] bg-gradient-to-br from-gray-800 to-gray-900 rounded-[2.5rem] shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] ring-4 ring-white/50 border border-white/20 group overflow-hidden">
         {loading ? (
           <div className="flex h-full w-full items-center justify-center">
             <Loader2 className="w-8 h-8 animate-spin text-pink-300" />
@@ -265,7 +268,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
               {EMOJIS.map(emoji => (
                 <button 
                   key={emoji} 
-                  onClick={() => handleReact(emoji)}
+                  onClick={(e) => handleReact(emoji, e)}
                   className="text-2xl hover:scale-125 transition-transform active:scale-95"
                 >
                   {emoji}
@@ -295,6 +298,7 @@ export default function LocketWidget({ userProfile, partnerProfile }: { userProf
         userId={userProfile.id}
         photoFile={photoFile}
       />
+      <FloatingReactions ref={reactionsRef} />
     </div>
   );
 }

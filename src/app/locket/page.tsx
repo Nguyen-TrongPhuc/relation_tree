@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import FloatingReactions, { FloatingReactionsRef } from '@/components/locket/FloatingReactions';
 import Link from 'next/link';
 import { ArrowLeft, Clock, Grid, Loader2, Smile, Send, Heart, Download, Trash, MoreHorizontal, Camera } from 'lucide-react';
 import LiveCameraModal from '@/components/locket/LiveCameraModal';
@@ -33,6 +34,7 @@ export default function LocketPage() {
   const [showMenuFor, setShowMenuFor] = useState<string | null>(null);
 
   const supabase = createClient();
+  const reactionsRef = useRef<FloatingReactionsRef>(null);
   const observerTarget = useRef(null);
   
   const limit = 10;
@@ -152,7 +154,10 @@ const fetchMoments = async (isInitial = false) => {
     };
   }, [hasMore, loadingMore, loading, moments]);
 
-  const handleReact = async (momentId: string, emoji: string) => {
+  const handleReact = async (momentId: string, emoji: string, e?: React.MouseEvent) => {
+    if (e && reactionsRef.current) {
+      reactionsRef.current.triggerReaction(emoji, e.clientX, e.clientY);
+    }
     setShowEmojisFor(null);
     const moment = moments.find(m => m.id === momentId);
     if (!moment) return;
@@ -332,7 +337,7 @@ const fetchMoments = async (isInitial = false) => {
                       {EMOJIS.map(emoji => (
                         <button 
                           key={emoji} 
-                          onClick={() => handleReact(moment.id, emoji)}
+                          onClick={(e) => handleReact(moment.id, emoji, e)}
                           className="text-2xl hover:scale-125 transition-transform active:scale-95"
                         >
                           {emoji}
@@ -392,6 +397,7 @@ const fetchMoments = async (isInitial = false) => {
           </div>
         )}
       </div>
+      <FloatingReactions ref={reactionsRef} />
     </main>
   );
 }

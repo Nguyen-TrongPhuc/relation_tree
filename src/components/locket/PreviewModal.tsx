@@ -111,7 +111,7 @@ export default function PreviewModal({ isOpen, onClose, onSend, userId, photoFil
         ))}
       </div>
 
-      <div className="relative w-full max-w-md aspect-[3/4] bg-gray-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+      <div className="relative w-full max-w-md aspect-square bg-gray-900 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
         <img 
           src={objectUrl} 
           alt="Captured" 

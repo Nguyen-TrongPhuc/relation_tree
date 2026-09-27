@@ -87,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (!user || !partnerProfile?.id) return;
     if (!navigator.geolocation) return;
+    if (localStorage.getItem('allow_location') !== 'true') return;
 
     // 1. Bắt đầu theo dõi GPS
     watchIdRef.current = navigator.geolocation.watchPosition(

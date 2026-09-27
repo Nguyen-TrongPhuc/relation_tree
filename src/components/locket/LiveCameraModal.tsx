@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Camera, RefreshCcw, Loader2 } from 'lucide-react';
+import { X, Camera, RefreshCcw, Loader2, Zap } from 'lucide-react';
 
 interface LiveCameraModalProps {
   isOpen: boolean;
@@ -16,6 +16,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
   const [facingMode, setFacingMode] = useState<'user' | 'environment'>('user');
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isFlashOn, setIsFlashOn] = useState(false);
 
   const startCamera = async (mode: 'user' | 'environment') => {
     setIsLoading(true);
@@ -60,6 +61,22 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
     };
   }, [isOpen]);
 
+  const toggleFlash = async () => {
+    if (!stream) return;
+    const track = stream.getVideoTracks()[0];
+    const capabilities = track.getCapabilities ? track.getCapabilities() : {};
+    if (capabilities.torch !== undefined) {
+      try {
+        await track.applyConstraints({ advanced: [{ torch: !isFlashOn }] });
+        setIsFlashOn(!isFlashOn);
+      } catch (e) {
+        console.error(e);
+      }
+    } else {
+      alert("Trình duyệt/thiết bị của bạn không hỗ trợ bật Flash!");
+    }
+  };
+
   const toggleCamera = () => {
     const newMode = facingMode === 'user' ? 'environment' : 'user';
     setFacingMode(newMode);
@@ -74,7 +91,7 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    const targetRatio = 3 / 4;
+    const targetRatio = 1 / 1;
     const videoRatio = video.videoWidth / video.videoHeight;
     
     let drawWidth = video.videoWidth;
@@ -116,12 +133,15 @@ export default function LiveCameraModal({ isOpen, onClose, onCapture }: LiveCame
         <button onClick={onClose} className="p-2 text-white bg-black/20 rounded-full backdrop-blur-md">
           <X size={24} />
         </button>
+        <button onClick={toggleFlash} className={`p-2 rounded-full backdrop-blur-md ${isFlashOn ? 'bg-yellow-400 text-black' : 'text-white bg-black/20'}`}>
+          <Zap size={24} />
+        </button>
         <button onClick={toggleCamera} className="p-2 text-white bg-black/20 rounded-full backdrop-blur-md">
           <RefreshCcw size={24} />
         </button>
       </div>
 
-      <div className="relative w-full max-w-md aspect-[3/4] flex items-center justify-center bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
+      <div className="relative w-full max-w-md aspect-square flex items-center justify-center bg-gray-900 rounded-3xl overflow-hidden shadow-2xl">
         {isLoading && <Loader2 className="absolute text-white animate-spin z-10" size={40} />}
         {error && <p className="absolute text-red-500 z-10 px-6 text-center">{error}</p>}
         

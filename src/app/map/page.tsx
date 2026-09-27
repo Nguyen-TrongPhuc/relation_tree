@@ -16,6 +16,10 @@ const LocationMap = dynamic(() => import('@/components/map/LocationMap'), {
 });
 
 export default function MapPage() {
+  const enableLocation = () => {
+    localStorage.setItem('allow_location', 'true');
+    window.location.reload();
+  };
   const { user, loading, pairData } = useAuth();
   const router = useRouter();
 
